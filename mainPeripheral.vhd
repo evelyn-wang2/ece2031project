@@ -1,3 +1,7 @@
+-- 11/11/2026
+-- Evelyn, James, Patrick, Alina
+
+
 -- 1. Library Declaration
 library ieee;
 use ieee.std_logic_1164.all;
