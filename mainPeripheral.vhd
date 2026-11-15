@@ -61,7 +61,7 @@ architecture behavior of timerPeripheral is
 	signal mode3 : std_logic := '0';
 
 	-- stores the done flags for each sub-timer
-	-- '0' indicates countdown is not complete
+	-- '0' indicates countdown is not complete (default)
 	-- '1' indicates countdown has finished
 	signal done1 : std_logic := '0';
 	signal done2 : std_logic := '0';
@@ -84,8 +84,45 @@ architecture behavior of timerPeripheral is
 	-- example: 1 ms tick rate -> tick period is 1, so timers will update every 10000 clock ticks
 	-- the programmer can change this value using register 0x70
 	signal tick_period : integer range 1 to 65535 := 1000;
-	
+
+process(resetn, clk_10mhz)
 begin
+	-- resets all timers and resets defaults
+	if resetn = '0' then
 	
+	    -- go back to defualt tick period, reset clock count to zero
+	    clock_count <= 0;
+	    tick_period <= 1000;
+	
+	    -- reset all timer counts to 0
+	    master_count <= "0000000000000000";
+	    sub1_count   <= "0000000000000000";
+	    sub2_count   <= "0000000000000000";
+	    sub3_count   <= "0000000000000000";
+	
+	    -- stop timers
+	    master_run <= '0';
+	    run1 <= '0';
+	    run2 <= '0';
+	    run3 <= '0';
+	
+	    -- set sub-timers to stopwatch mode
+	    mode1 <= '0';
+	    mode2 <= '0';
+	    mode3 <= '0';
+	
+	    -- clear done flags
+	    done1 <= '0';
+	    done2 <= '0';
+	    done3 <= '0';
+
+    elsif rising_edge(clk_10mhz) then
+
+        -- timer logic goes here
+
+		
+    end if;
+
+end process;
 
 end architecture behavior;
