@@ -74,13 +74,14 @@ architecture behavior of timerPeripheral is
 	constant ticks_per_ms : integer := clock_freq / 1000;
 
 	-- counts how many fpga clock ticks have passed
-	-- if we want to wait 1 second, this counts 10 million clock ticks
-	-- once enough ticks pass, the timers update and this starts over at 0
-	-- the maximum allows for a tick period of up to 65535 milliseconds
+	-- keeps counting until it reaches tick_period * ticks_per_ms
+	-- once enough ticks pass, the timers update and clock_count starts over at 0
 	signal clock_count : integer range 0 to 65535 * ticks_per_ms := 0;
 	
-	-- sets how many milliseconds to wait before the timers update
-	-- 1000 milliseconds = 1 second, so the timers update once per second
+	-- sets how many ms to wait before timers update
+	-- the number of clock ticks we wait is tick_period * ticks_per_ms
+	-- 1000 * 10000 = 10 million clock ticks, so the timers update once per second (default)
+	-- example: 1 ms tick rate -> tick period is 1, so timers will update every 10000 clock ticks
 	-- the programmer can change this value using register 0x70
 	signal tick_period : integer range 1 to 65535 := 1000;
 	
