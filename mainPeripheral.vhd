@@ -1,19 +1,20 @@
 -- 11/11/2026
 -- Evelyn, James, Patrick, Alina
---test pull
+-- ECE 2031 L03_0
+-- This is our project main peripheral file.
 
--- 1. Library Declaration
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
--- 2. Entity Declaration (Inputs and Outputs)
-entity TimerPeripheral is
+
+entity ece2031project is
 	generic (
 		clock_freq : integer := 10000000 --sets input clock frequency to 10MHz (default), also scomp clock frequency
 		
 		-- declares a setting you can choose when you instantiate the peripheral
-		-- my friend is saying to like define the clock here
+		-- define the clock here
 	);
 	
   port ( -- these ins and outs are from the timers point of view
@@ -29,7 +30,7 @@ entity TimerPeripheral is
 end entity;
 
 --architecture defines what happens in timerPeripheral
-architecture behavior of timerPeripheral is
+architecture behavior of ece2031project is
 	--addresses from register map
 	CONSTANT master_addr : STD_LOGIC_VECTOR(10 DOWNTO 0) := "00001110000"; -- 0x70
 	CONSTANT sub1_addr   : STD_LOGIC_VECTOR(10 DOWNTO 0) := "00001110001"; -- 0x71
@@ -84,7 +85,8 @@ architecture behavior of timerPeripheral is
 	-- example: 1 ms tick rate -> tick period is 1, so timers will update every 10000 clock ticks
 	-- the programmer can change this value using register 0x70
 	signal tick_period : integer range 1 to 65535 := 1000;
-
+begin
+	
 process(resetn, clk_10mhz)
 begin
 	-- resets all timers and resets defaults
@@ -117,10 +119,20 @@ begin
 	    done3 <= '0';
 
     elsif rising_edge(clk_10mhz) then
+			-- start/stop, SCOMP does OUT to 0x74
+        if io_write = '1' and io_addr = master_cmd then
+            master_run <= data_in(0);   --figuring what is written in the lsb
+        end if;
 
-        -- timer logic goes here
-
-		
+        -- counting logic 
+        if master_run = '1' then
+            if clock_count >= tick_period * ticks_per_ms - 1 then -- this is to keep it in line with how fpga clock ticks have gone by.
+                clock_count  <= 0;
+                master_count <= master_count + 1;
+            else
+                clock_count <= clock_count + 1; -- adding the fpga clock ticks
+            end if;
+        end if;
     end if;
 
 end process;
