@@ -40,28 +40,28 @@ architecture behavior of ece2031project is
 	CONSTANT sub_cmd    : STD_LOGIC_VECTOR(10 DOWNTO 0) := "00001110101"; -- 0x75
 	CONSTANT timer_flags : STD_LOGIC_VECTOR(10 DOWNTO 0) := "00001110110"; -- 0x76
 
-	-- stores the current count for each timer, initializes all counts to zero
+	-- stores the current count for each channel, initializes all counts to zero
 	signal master_count : unsigned(15 downto 0) := "0000000000000000";
 	signal sub1_count : unsigned(15 downto 0) := "0000000000000000";
 	signal sub2_count : unsigned(15 downto 0) := "0000000000000000";
 	signal sub3_count : unsigned(15 downto 0) := "0000000000000000";
 
-	-- stores whether each timer is running or stopped
-	-- '0' indicates timer is stopped; '1' indicates timer is enabled to run
-	-- master_run must be '1' for any of the sub-timers to be able to run
+	-- stores whether each channel is running or stopped
+	-- '0' indicates timer is stopped; '1' indicates channel is enabled to run
+	-- master_run must be '1' for any of the sub-channels to be able to run
 	signal master_run : std_logic := '0';
 	signal run1 : std_logic := '0';
 	signal run2 : std_logic := '0';
 	signal run3 : std_logic := '0';
 
-	--stores counting mode for each sub-timer
-	-- '0' is stopwatch mode where the timer counts up (default)
-	-- '1' is countdown mode where the timer counts down (programmer must set a preset value using using register 0x71, 0x72, or 0x73)
+	--stores counting mode for each sub-channel
+	-- '0' is stopwatch mode where the channel counts up (default)
+	-- '1' is countdown mode where the channel counts down (programmer must set a preset value using using register 0x71, 0x72, or 0x73)
 	signal mode1 : std_logic := '0';
 	signal mode2 : std_logic := '0';
 	signal mode3 : std_logic := '0';
 
-	-- stores the done flags for each sub-timer
+	-- stores the done flags for each sub-channel
 	-- '0' indicates countdown is not complete (default)
 	-- '1' indicates countdown has finished
 	signal done1 : std_logic := '0';
@@ -71,7 +71,7 @@ architecture behavior of ece2031project is
 	-- the fpga clock runs at 10mhz -> 10 million ticks per second
 	-- dividing by 1000 gives us 10000 clock ticks per millisecond
 	-- the programmer can use register 0x70 to set how many milliseconds
-	-- elapse before the timers count up or down by 1
+	-- elapse before the channels count up or down by 1
 	constant ticks_per_ms : integer := clock_freq / 1000;
 
 	-- counts how many fpga clock ticks have passed
@@ -79,36 +79,36 @@ architecture behavior of ece2031project is
 	-- once enough ticks pass, the timers update and clock_count starts over at 0
 	signal clock_count : integer range 0 to 65535 * ticks_per_ms := 0;
 	
-	-- sets how many ms to wait before timers update
+	-- sets how many ms to wait before channels update
 	-- the number of clock ticks we wait is tick_period * ticks_per_ms
-	-- 1000 * 10000 = 10 million clock ticks, so the timers update once per second (default)
-	-- example: 1 ms tick rate -> tick period is 1, so timers will update every 10000 clock ticks
+	-- 1000 * 10000 = 10 million clock ticks, so the channels update once per second (default)
+	-- example: 1 ms tick rate -> tick period is 1, so channels will update every 10000 clock ticks
 	-- the programmer can change this value using register 0x70
 	signal tick_period : integer range 1 to 65535 := 1000;
 begin
 	
 process(resetn, clk_10mhz)
 begin
-	-- resets all timers and resets defaults
+	-- resets all channels and resets defaults
 	if resetn = '0' then
 	
 	    -- go back to defualt tick period, reset clock count to zero
 	    clock_count <= 0;
 	    tick_period <= 1000;
 	
-	    -- reset all timer counts to 0
+	    -- reset all channel counts to 0
 	    master_count <= "0000000000000000";
 	    sub1_count   <= "0000000000000000";
 	    sub2_count   <= "0000000000000000";
 	    sub3_count   <= "0000000000000000";
 	
-	    -- stop timers
+	    -- stop channels
 	    master_run <= '0';
 	    run1 <= '0';
 	    run2 <= '0';
 	    run3 <= '0';
 	
-	    -- set sub-timers to stopwatch mode
+	    -- set sub-channels to stopwatch mode
 	    mode1 <= '0';
 	    mode2 <= '0';
 	    mode3 <= '0';
