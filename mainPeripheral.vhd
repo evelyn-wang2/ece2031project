@@ -9,6 +9,7 @@ library lpm;
 
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use lpm.lpm_components.all;
 
 
 entity ece2031project is
@@ -69,11 +70,17 @@ architecture behavior of ece2031project is
 	signal done2 : std_logic := '0';
 	signal done3 : std_logic := '0';
 
+  -- stores the expiry duration for each sub-channel 
+  -- sets default as "0"
+  signal sub1_exp : unsigned(15 downto 0) := "0000000000000000";
+  signal sub2_exp : unsigned(15 downto 0) := "0000000000000000";
+  signal sub3_exp : unsigned(15 downto 0) := "0000000000000000";
+
 	-- the fpga clock runs at 10mhz -> 10 million ticks per second
 	-- dividing by 1000 gives us 10000 clock ticks per millisecond
 	-- the programmer can use register 0x70 to set how many milliseconds
 	-- elapse before the channels count up or down by 1
-	constant ticks_per_ms : integer := clock_freq / 1000;
+	constant ticks_per_ms : integer := 10000; -- for 10mhz clock: 10000000hz/1000hz
 
 	-- counts how many fpga clock ticks have passed
 	-- keeps counting until it reaches tick_period * ticks_per_ms
@@ -86,8 +93,21 @@ architecture behavior of ece2031project is
 	-- example: 1 ms tick rate -> tick period is 1, so channels will update every 10000 clock ticks
 	-- the programmer can change this value using register 0x70
 	signal tick_period : integer range 1 to 65535 := 1000;
+
+  signal data_timer  : std_logic_vector(15 downto 0); -- internal data lines for output, use with lpm
+  signal io_en       : std_logic;
 begin
-	
+
+io_bus: lpm_bustri  -- lpm for i/o databus
+generic map (
+  lpm_width => 16
+)
+port map (
+  data     => data_timer,
+  enabledt => io_en,
+  tridata  => io_data
+);
+
 process(resetn, clk_10mhz)
 begin
 	-- resets all channels and resets defaults
@@ -128,14 +148,92 @@ begin
         -- counting logic 
         if master_run = '1' then
             if clock_count >= tick_period * ticks_per_ms - 1 then -- this is to keep it in line with how fpga clock ticks have gone by.
-                clock_count  <= 0;
+                clock_count <= 0;
                 master_count <= master_count + 1;
+                if run1 = '1' then  -- counter for subch 1
+                  sub1_count <= sub1_count + 1; -- increment
+                  if ((sub1_count >= sub1_exp) and (sub1_exp > 0 xor sub1_count = 0)) then
+                    done1 <= '1' 
+                  end if; -- check if done
+                end if;
+                if run2 = '1' then -- counter for subch 2
+                  sub2_count <= sub2_count + 1; -- increment
+                  if ((sub2_count >= sub2_exp) and (sub2_exp > 0 xor sub2_count = 0)) then
+                    done2 <= '1' 
+                  end if; -- check if done
+                end if;
+                if run3 = '1' then -- counter for subch 3
+                  sub3_count <= sub3_count + 1; -- increment
+                  if ((sub3_count >= sub3_exp) and (sub3_exp > 0 xor sub3_count = 0)) then
+                    done3 <= '1' 
+                  end if; -- check if done
+                end if;
             else
                 clock_count <= clock_count + 1; -- adding the fpga clock ticks
             end if;
         end if;
     end if;
-
+    
 end process;
+
+-- TODO: data input mechanism for master commands, tick rate
+
+
+-- data input mechanism for subchannels
+process(io_addr, io_write)
+begin
+  if (io_write = '1') then
+    -- set expiry time
+    if (io_addr = sub1_addr) then
+      sub1_exp <= io_data;
+      done1 <= '0';
+    end if;
+    if (io_addr = sub2_addr) then
+      sub2_exp <= io_data;
+      done2 <= '0';
+    end if;
+    if (io_addr = sub3_addr) then
+      sub3_exp <= io_data;
+      done3 <= '0';
+    end if;
+    
+    if (io_addr = sub_cmd) then
+      run1 <= io_data(0);
+      run2 <= io_data(1);
+      run3 <= io_data(2);
+      if (io_data(3) = '1') then
+        sub1_count <= x"0000";
+        done1 <= '0';
+      end if;
+      if (io_data(4) = '1') then
+        sub2_count <= x"0000";
+        done2 <= '0';
+      end if;
+      if (io_data(5) = '1') then
+        sub3_count <= x"0000";
+        done3 <= '0';
+        sub3_exp <= x"0000";
+      end if;
+    end if;
+  end if;  
+end process;
+
+-- data output mechanism
+process(io_addr, io_read)
+begin
+  if (io_read = '1') then
+    with io_addr select data_timer <=
+      std_logic_vector(master_count) when master_addr,
+      std_logic_vector(sub1_count) when sub1_addr,
+      std_logic_vector(sub2_count) when sub2_addr,
+      std_logic_vector(sub3_count) when sub3_addr,
+      "0000000000000" & run3 & run2 & run1 when sub_cmd,
+      "0000000000000" & done3 & done2 & done1 when timer_flags,
+      x"0000" when others;
+    io_en <= '1'
+  else
+    io_en <= '0';
+  end if;
+
 
 end architecture behavior;
