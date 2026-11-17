@@ -1,0 +1,31 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 2048;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    000 : 19f4; -- LOADI 500
+    001 : 9870; -- OUT Master
+    002 : 1805; -- LOADI 5
+    003 : 9871; -- OUT Sub1
+    004 : 180a; -- LOADI 10
+    005 : 9872; -- OUT Sub2
+    006 : 180f; -- LOADI 15
+    007 : 9873; -- OUT Sub3
+    008 : 1803; -- LOADI 3
+    009 : 9874; -- OUT MasCmd
+    00a : 9000; -- Loop:   IN Switches
+    00b : 9875; -- OUT SubCmd
+    00c : 9070; -- IN Master
+    00d : 9804; -- OUT Hex0
+    00e : 9076; -- IN Expiry
+    00f : 9801; -- OUT LEDs
+    010 : 580a; -- JUMP Loop
+
+    [011..7ff] : 0000; -- Empty memory
+
+  END;
