@@ -13,7 +13,6 @@ entity ece2031project is
 	generic (
 		clock_freq : integer := 10000000 --sets input clock frequency to 10MHz (default), also scomp clock frequency
 		
-		-- declares a setting you can choose when you instantiate the peripheral
 		-- define the clock here
 	);
 	
