@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 use lpm.lpm_components.all;
 
 
-entity ece2031project is
+entity mainPeripheral is
 	generic (
 		clock_freq : integer := 10000000 --sets input clock frequency to 10MHz (default), also scomp clock frequency
 		
@@ -33,7 +33,7 @@ entity ece2031project is
 end entity;
 
 --architecture defines what happens in timerPeripheral
-architecture behavior of ece2031project is
+architecture behavior of mainPeripheral is
 	--addresses from register map
 	CONSTANT master_addr : STD_LOGIC_VECTOR(10 DOWNTO 0) := "00001110000"; -- 0x70
 	CONSTANT sub1_addr   : STD_LOGIC_VECTOR(10 DOWNTO 0) := "00001110001"; -- 0x71
@@ -153,19 +153,19 @@ begin
               master_count <= master_count + 1;
               if run1 = '1' then  -- counter for subch 1
                 sub1_count <= sub1_count + 1; -- increment
-                if ((sub1_count >= sub1_exp) and (sub1_exp > 0 xor sub1_count = 0)) then
+                if ((sub1_count >= sub1_exp - 1) and (sub1_exp > 0 xor sub1_count = 0)) then
                   done1 <= '1';
                 end if; -- check if done
               end if;
               if run2 = '1' then -- counter for subch 2
                 sub2_count <= sub2_count + 1; -- increment
-                if ((sub2_count >= sub2_exp) and (sub2_exp > 0 xor sub2_count = 0)) then
+                if ((sub2_count >= sub2_exp - 1) and (sub2_exp > 0 xor sub2_count = 0)) then
                   done2 <= '1'; 
                 end if; -- check if done
               end if;
               if run3 = '1' then -- counter for subch 3
                 sub3_count <= sub3_count + 1; -- increment
-                if ((sub3_count >= sub3_exp) and (sub3_exp > 0 xor sub3_count = 0)) then
+                if ((sub3_count >= sub3_exp - 1) and (sub3_exp > 0 xor sub3_count = 0)) then
                   done3 <= '1'; 
                 end if; -- check if done
               end if;
