@@ -25,8 +25,9 @@ entity ece2031project is
      io_addr : in std_logic_vector(10 downto 0); -- 11 bit IO address to tell which register 
 	 io_write : in std_logic; -- tells peripheral scomp is exdcuting out
 	 io_read : in std_logic; -- tells peripheral scomp is executing a in
-	 data_in : in std_logic_vector(15 downto 0); -- coming into peripheral from scomp during na out
-	 data_out : out std_logic_vector(15 downto 0) -- data coming out of the peripheral during a read (like would carry timer count, running status, DONE flag etc)
+	 io_data	: inout std_logic_vector(15 downto 0) -- data line
+	 --data_in : in std_logic_vector(15 downto 0); -- coming into peripheral from scomp during na out
+	 --data_out : out std_logic_vector(15 downto 0) -- data coming out of the peripheral during a read (like would carry timer count, running status, DONE flag etc)
 	 
   );
 end entity;
@@ -108,7 +109,7 @@ port map (
   tridata  => io_data
 );
 
-process(resetn, clk_10mhz)
+process(resetn, clk_10mhz, io_addr, io_write)
 begin
 	-- resets all channels and resets defaults
 	if resetn = '0' then
@@ -142,7 +143,7 @@ begin
   elsif rising_edge(clk_10mhz) then
     -- start/stop, SCOMP does OUT to 0x74
       if io_write = '1' and io_addr = master_cmd then
-          master_run <= data_in(0);   --figuring what is written in the lsb
+          master_run <= io_data(0);   --figuring what is written in the lsb
       end if;
 
       -- counting logic 
@@ -153,87 +154,94 @@ begin
               if run1 = '1' then  -- counter for subch 1
                 sub1_count <= sub1_count + 1; -- increment
                 if ((sub1_count >= sub1_exp) and (sub1_exp > 0 xor sub1_count = 0)) then
-                  done1 <= '1' 
+                  done1 <= '1';
                 end if; -- check if done
               end if;
               if run2 = '1' then -- counter for subch 2
                 sub2_count <= sub2_count + 1; -- increment
                 if ((sub2_count >= sub2_exp) and (sub2_exp > 0 xor sub2_count = 0)) then
-                  done2 <= '1' 
+                  done2 <= '1'; 
                 end if; -- check if done
               end if;
               if run3 = '1' then -- counter for subch 3
                 sub3_count <= sub3_count + 1; -- increment
                 if ((sub3_count >= sub3_exp) and (sub3_exp > 0 xor sub3_count = 0)) then
-                  done3 <= '1' 
+                  done3 <= '1'; 
                 end if; -- check if done
               end if;
           else
               clock_count <= clock_count + 1; -- adding the fpga clock ticks
           end if;
       end if;
+		
+		-- data input mechanism for subchannels
+		if (io_write = '1' and resetn = '1') then
+			 -- set expiry time
+			 if (io_addr = sub1_addr) then
+				sub1_exp <= unsigned(io_data);
+				done1 <= '0';
+			 end if;
+			 if (io_addr = sub2_addr) then
+				sub2_exp <= unsigned(io_data);
+				done2 <= '0';
+			 end if;
+			 if (io_addr = sub3_addr) then
+				sub3_exp <= unsigned(io_data);
+				done3 <= '0';
+			 end if;
+			 -- sub commands
+			 if (io_addr = sub_cmd) then
+				-- run state
+				run1 <= io_data(0);
+				run2 <= io_data(1);
+				run3 <= io_data(2);
+				-- reset
+				if (io_data(3) = '1') then
+				  sub1_count <= x"0000";
+				  done1 <= '0';
+				end if;
+				if (io_data(4) = '1') then
+				  sub2_count <= x"0000";
+				  done2 <= '0';
+				end if;
+				if (io_data(5) = '1') then
+				  sub3_count <= x"0000";
+				  done3 <= '0';
+				  sub3_exp <= x"0000";
+				end if;
+			end if;
+		end if;
   end if;
     
 end process;
 
+
 -- TODO: data input mechanism for master commands, tick rate
-
-
--- data input mechanism for subchannels
-process(io_addr, io_write)
-begin
-  if (io_write = '1') then
-    -- set expiry time
-    if (io_addr = sub1_addr) then
-      sub1_exp <= io_data;
-      done1 <= '0';
-    end if;
-    if (io_addr = sub2_addr) then
-      sub2_exp <= io_data;
-      done2 <= '0';
-    end if;
-    if (io_addr = sub3_addr) then
-      sub3_exp <= io_data;
-      done3 <= '0';
-    end if;
-    
-    if (io_addr = sub_cmd) then
-      run1 <= io_data(0);
-      run2 <= io_data(1);
-      run3 <= io_data(2);
-      if (io_data(3) = '1') then
-        sub1_count <= x"0000";
-        done1 <= '0';
-      end if;
-      if (io_data(4) = '1') then
-        sub2_count <= x"0000";
-        done2 <= '0';
-      end if;
-      if (io_data(5) = '1') then
-        sub3_count <= x"0000";
-        done3 <= '0';
-        sub3_exp <= x"0000";
-      end if;
-    end if;
-  end if;  
-end process;
 
 -- data output mechanism
 process(io_addr, io_read)
 begin
-  if (io_read = '1') then
-    with io_addr select data_timer <=
-      std_logic_vector(master_count) when master_addr,
-      std_logic_vector(sub1_count) when sub1_addr,
-      std_logic_vector(sub2_count) when sub2_addr,
-      std_logic_vector(sub3_count) when sub3_addr,
-      "0000000000000" & run3 & run2 & run1 when sub_cmd,
-      "0000000000000" & done3 & done2 & done1 when timer_flags,
-      x"0000" when others;
-    io_en <= '1'
-  else
-    io_en <= '0';
+	if (io_read = '1') then
+		case io_addr is
+			when master_addr =>
+				data_timer <= std_logic_vector(master_count);
+			when sub1_addr =>
+				data_timer <= std_logic_vector(sub1_count);
+			when sub2_addr =>
+				data_timer <= std_logic_vector(sub2_count);
+			when sub3_addr =>
+				data_timer <= std_logic_vector(sub3_count);
+			when sub_cmd =>
+				data_timer <= "0000000000000" & run3 & run2 & run1;
+			when timer_flags =>
+				data_timer <= "0000000000000" & done3 & done2 & done1;
+			when others =>
+				data_timer <= x"0000";
+		 end case;
+		 io_en <= '1';
+	  else
+		 io_en <= '0';
   end if;
-
+end process;
 
 end architecture behavior;
