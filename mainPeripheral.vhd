@@ -81,7 +81,7 @@ architecture behavior of ece2031project is
 	-- dividing by 1000 gives us 10000 clock ticks per millisecond
 	-- the programmer can use register 0x70 to set how many milliseconds
 	-- elapse before the channels count up or down by 1
-	constant ticks_per_ms : integer := 10000; -- for 10mhz clock: 10000000hz/1000hz
+	constant ticks_per_ms : integer := clock_freq / 1000;
 
 	-- counts how many fpga clock ticks have passed
 	-- keeps counting until it reaches tick_period * ticks_per_ms
