@@ -113,66 +113,66 @@ begin
 	-- resets all channels and resets defaults
 	if resetn = '0' then
 	
-	    -- go back to defualt tick period, reset clock count to zero
-	    clock_count <= 0;
-	    tick_period <= 1000;
-	
-	    -- reset all channel counts to 0
-	    master_count <= "0000000000000000";
-	    sub1_count   <= "0000000000000000";
-	    sub2_count   <= "0000000000000000";
-	    sub3_count   <= "0000000000000000";
-	
-	    -- stop channels
-	    master_run <= '0';
-	    run1 <= '0';
-	    run2 <= '0';
-	    run3 <= '0';
-	
-	    -- set sub-channels to stopwatch mode
-	    mode1 <= '0';
-	    mode2 <= '0';
-	    mode3 <= '0';
-	
-	    -- clear done flags
-	    done1 <= '0';
-	    done2 <= '0';
-	    done3 <= '0';
+    -- go back to defualt tick period, reset clock count to zero
+    clock_count <= 0;
+    tick_period <= 1000;
 
-    elsif rising_edge(clk_10mhz) then
-			-- start/stop, SCOMP does OUT to 0x74
-        if io_write = '1' and io_addr = master_cmd then
-            master_run <= data_in(0);   --figuring what is written in the lsb
-        end if;
+    -- reset all channel counts to 0
+    master_count <= "0000000000000000";
+    sub1_count   <= "0000000000000000";
+    sub2_count   <= "0000000000000000";
+    sub3_count   <= "0000000000000000";
 
-        -- counting logic 
-        if master_run = '1' then
-            if clock_count >= tick_period * ticks_per_ms - 1 then -- this is to keep it in line with how fpga clock ticks have gone by.
-                clock_count <= 0;
-                master_count <= master_count + 1;
-                if run1 = '1' then  -- counter for subch 1
-                  sub1_count <= sub1_count + 1; -- increment
-                  if ((sub1_count >= sub1_exp) and (sub1_exp > 0 xor sub1_count = 0)) then
-                    done1 <= '1' 
-                  end if; -- check if done
-                end if;
-                if run2 = '1' then -- counter for subch 2
-                  sub2_count <= sub2_count + 1; -- increment
-                  if ((sub2_count >= sub2_exp) and (sub2_exp > 0 xor sub2_count = 0)) then
-                    done2 <= '1' 
-                  end if; -- check if done
-                end if;
-                if run3 = '1' then -- counter for subch 3
-                  sub3_count <= sub3_count + 1; -- increment
-                  if ((sub3_count >= sub3_exp) and (sub3_exp > 0 xor sub3_count = 0)) then
-                    done3 <= '1' 
-                  end if; -- check if done
-                end if;
-            else
-                clock_count <= clock_count + 1; -- adding the fpga clock ticks
-            end if;
-        end if;
-    end if;
+    -- stop channels
+    master_run <= '0';
+    run1 <= '0';
+    run2 <= '0';
+    run3 <= '0';
+
+    -- set sub-channels to stopwatch mode
+    mode1 <= '0';
+    mode2 <= '0';
+    mode3 <= '0';
+
+    -- clear done flags
+    done1 <= '0';
+    done2 <= '0';
+    done3 <= '0';
+
+  elsif rising_edge(clk_10mhz) then
+    -- start/stop, SCOMP does OUT to 0x74
+      if io_write = '1' and io_addr = master_cmd then
+          master_run <= data_in(0);   --figuring what is written in the lsb
+      end if;
+
+      -- counting logic 
+      if master_run = '1' then
+          if clock_count >= tick_period * ticks_per_ms - 1 then -- this is to keep it in line with how fpga clock ticks have gone by.
+              clock_count <= 0;
+              master_count <= master_count + 1;
+              if run1 = '1' then  -- counter for subch 1
+                sub1_count <= sub1_count + 1; -- increment
+                if ((sub1_count >= sub1_exp) and (sub1_exp > 0 xor sub1_count = 0)) then
+                  done1 <= '1' 
+                end if; -- check if done
+              end if;
+              if run2 = '1' then -- counter for subch 2
+                sub2_count <= sub2_count + 1; -- increment
+                if ((sub2_count >= sub2_exp) and (sub2_exp > 0 xor sub2_count = 0)) then
+                  done2 <= '1' 
+                end if; -- check if done
+              end if;
+              if run3 = '1' then -- counter for subch 3
+                sub3_count <= sub3_count + 1; -- increment
+                if ((sub3_count >= sub3_exp) and (sub3_exp > 0 xor sub3_count = 0)) then
+                  done3 <= '1' 
+                end if; -- check if done
+              end if;
+          else
+              clock_count <= clock_count + 1; -- adding the fpga clock ticks
+          end if;
+      end if;
+  end if;
     
 end process;
 
