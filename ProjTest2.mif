@@ -1,0 +1,29 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 2048;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    000 : 19f4; -- LOADI 500       ; testing custom tick
+    001 : 9870; -- OUT Master
+    002 : 1805; -- LOADI 5
+    003 : 9871; -- OUT Sub1
+    004 : 180a; -- LOADI 10
+    005 : 9872; -- OUT Sub2
+    006 : 1807; -- LOADI 7
+    007 : 9875; -- OUT SubCmd
+    008 : 9000; -- Loop:   IN Switches     ; test master commands
+    009 : 9874; -- OUT MasCmd
+    00a : 9073; -- IN Sub3         ; test sub stopwatch output
+    00b : 9804; -- OUT Hex0
+    00c : 9076; -- IN Expiry       ; test flag output
+    00d : 9801; -- OUT LEDs
+    00e : 5808; -- JUMP Loop
+
+    [00f..7ff] : 0000; -- Empty memory
+
+  END;
