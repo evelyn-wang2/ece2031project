@@ -1,0 +1,52 @@
+-- Altera Memory Initialization File (MIF)
+
+DEPTH = 2048;
+WIDTH = 16;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = HEX;
+
+CONTENT
+  BEGIN
+    000 : 19f4; -- LOADI 500       ; testing custom tick
+    001 : 9870; -- OUT Master
+    002 : 1807; -- LOADI 7
+    003 : 9875; -- OUT SubCmd
+    004 : 1819; -- LOADI 25      ; test if custom tick functionality checks run states. Tick rate will be VERY FAST if fail
+    005 : 9870; -- OUT Master
+    006 : 1805; -- LOADI 5
+    007 : 9871; -- OUT Sub1
+    008 : 180a; -- LOADI 10
+    009 : 9872; -- OUT Sub2
+    00a : 1807; -- LOADI 7
+    00b : 9875; -- OUT SubCmd
+    00c : 9000; -- Loop:   IN Switches     ; test all commands
+    00d : 3600; -- ADDI -512
+    00e : 6812; -- JPOS SkipSC     ; does not write sub-commands if sw9 is up
+    00f : 7012; -- JZERO SkipSC
+    010 : 9000; -- IN Switches
+    011 : 9875; -- OUT SubCmd      ; sub-commands on lower 6 switches
+    012 : 5016; -- SkipSC: SHIFT -6
+    013 : 9874; -- OUT MasCmd      ; main commands on sw6/7
+    014 : 9073; -- IN Sub3         ; Sub3 in left hex display
+    015 : 9805; -- OUT Hex1
+    016 : 9072; -- IN Sub2         ; Sub2 in middle hex display
+    017 : 5008; -- SHIFT 8
+    018 : 1024; -- STORE OutMem
+    019 : 9071; -- IN Sub1         ; Sub1 in right hex display
+    01a : 3825; -- AND Mask
+    01b : 2024; -- ADD OutMem
+    01c : 9804; -- OUT Hex0
+    01d : 9074; -- IN MasCmd       ; test run state
+    01e : 5006; -- SHIFT 6
+    01f : 1024; -- STORE OutMem
+    020 : 9075; -- IN SubCmd
+    021 : 2024; -- ADD OutMem
+    022 : 9801; -- OUT LEDs
+    023 : 580c; -- JUMP Loop
+    024 : 0000; -- OutMem:	   DW   0
+    025 : 00ff; -- Mask:      DW	&H00FF
+
+    [026..7ff] : 0000; -- Empty memory
+
+  END;

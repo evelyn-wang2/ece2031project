@@ -149,21 +149,24 @@ begin
                 sub1_count <= sub1_count + 1; -- increment
                 if ((sub1_count >= sub1_exp - 1) and mode1 = '1') then -- if count is at/past expiry in timer mode, raise flag.
                   done1 <= '1';
-				  run1 <= '0';
+						run1 <= '0';
+						sub1_count <= sub1_exp;
                 end if; -- check if done
               end if;
               if run2 = '1' then -- counter for subch 2
                 sub2_count <= sub2_count + 1; -- increment
                 if ((sub2_count >= sub2_exp - 1) and mode2 = '1') then
                   done2 <= '1'; 
-				  run2 <= '0';
+						run2 <= '0';
+						sub2_count <= sub2_exp;
                 end if; -- check if done
               end if;
               if run3 = '1' then -- counter for subch 3
                 sub3_count <= sub3_count + 1; -- increment
                 if ((sub3_count >= sub3_exp - 1) and mode3 = '1') then 
                   done3 <= '1'; 
-				  run3 <= '0';
+						run3 <= '0';
+						sub3_count <= sub3_exp;
                 end if; -- check if done
               end if;
           else
@@ -261,17 +264,14 @@ begin
 				data_internal <= std_logic_vector(master_count);
 			when sub1_addr =>
 				if (mode1 = '0') then data_internal <= std_logic_vector(sub1_count);	-- output for stopwatch mode
-				elsif (done1 = '1') then data_internal <= x"0000";						-- zero output for expired, prevent unexpected behavior if timer resumed
 				else data_internal <= std_logic_vector(sub1_exp - sub1_count);			-- output for timer mode
 				end if;
 			when sub2_addr =>
 				if (mode2 = '0') then data_internal <= std_logic_vector(sub2_count);
-				elsif (done2 = '1') then data_internal <= x"0000";
 				else data_internal <= std_logic_vector(sub2_exp - sub2_count);
 				end if;
 			when sub3_addr =>
 				if (mode3 = '0') then data_internal <= std_logic_vector(sub3_count);
-				elsif (done3 = '1') then data_internal <= x"0000";
 				else data_internal <= std_logic_vector(sub3_exp - sub3_count);
 				end if;
 			when master_cmd =>
