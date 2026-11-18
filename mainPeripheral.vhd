@@ -211,6 +211,32 @@ begin
 				end if;
 			end if;
 		end if;
+		
+		-- master reset: OUT to 0x74 with bit 1 rasied
+		if io_write = '1' and io_addr = master_cmd and io_data(1) = '1' then
+			clock_count <= 0;
+			
+			-- clear elasped counts
+			master_count <= "0000000000000000";
+			sub1_count <= "0000000000000000";
+			sub2_count <= "0000000000000000";
+			sub3_count <= "0000000000000000";
+			
+			-- clear expiry flags
+			done1 <= '0';
+			done2 <= '0';
+			done3 <= '0';
+			
+			-- reset to stop watch mode
+			sub1_exp <= "0000000000000000";
+			sub2_exp <= "0000000000000000";
+			sub3_exp <= "0000000000000000";
+			
+			mode1 <= '0';
+			mode2 <= '0';
+			mode3 <= '0';
+		end if;
+			
   end if;
     
 end process;
