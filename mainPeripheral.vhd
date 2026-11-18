@@ -226,11 +226,11 @@ begin
 			when master_addr =>
 				data_timer <= std_logic_vector(master_count);
 			when sub1_addr =>
-				data_timer <= std_logic_vector(sub1_count);
+				data_timer <= std_logic_vector(sub1_exp - sub1_count);
 			when sub2_addr =>
-				data_timer <= std_logic_vector(sub2_count);
+				data_timer <= std_logic_vector(sub2_exp - sub2_count);
 			when sub3_addr =>
-				data_timer <= std_logic_vector(sub3_count);
+				data_timer <= std_logic_vector(sub3_exp - sub3_count);
 			when sub_cmd =>
 				data_timer <= "0000000000000" & run3 & run2 & run1;
 			when timer_flags =>
