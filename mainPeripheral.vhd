@@ -95,7 +95,7 @@ architecture behavior of mainPeripheral is
 	-- the programmer can change this value using register 0x70
 	signal tick_period : integer range 1 to 65535 := 1000;
 
-  signal data_timer  : std_logic_vector(15 downto 0); -- internal data lines for output, use with lpm
+  signal data_internal  : std_logic_vector(15 downto 0); -- internal data lines for output, use with lpm
   signal io_en       : std_logic;
 begin
 
@@ -104,7 +104,7 @@ generic map (
   lpm_width => 16
 )
 port map (
-  data     => data_timer,
+  data     => data_internal,
   enabledt => io_en,
   tridata  => io_data
 );
@@ -224,19 +224,28 @@ begin
 	if (io_read = '1') then
 		case io_addr is
 			when master_addr =>
-				data_timer <= std_logic_vector(master_count);
+				data_internal <= std_logic_vector(master_count);
 			when sub1_addr =>
-				data_timer <= std_logic_vector(sub1_count);
+				if (sub1_exp = 0) then data_internal <= std_logic_vector(sub1_count);
+				elsif (done1 = '1') then data_internal <= x"0000";
+				else data_internal <= std_logic_vector(sub1_exp - sub1_count);
+				end if;
 			when sub2_addr =>
-				data_timer <= std_logic_vector(sub2_count);
+				if (sub2_exp = 0) then data_internal <= std_logic_vector(sub2_count);
+				elsif (done2 = '1') then data_internal <= x"0000";
+				else data_internal <= std_logic_vector(sub2_exp - sub2_count);
+				end if;
 			when sub3_addr =>
-				data_timer <= std_logic_vector(sub3_count);
+				if (sub3_exp = 0) then data_internal <= std_logic_vector(sub3_count);
+				elsif (done3 = '1') then data_internal <= x"0000";
+				else data_internal <= std_logic_vector(sub3_exp - sub3_count);
+				end if;
 			when sub_cmd =>
-				data_timer <= "0000000000000" & run3 & run2 & run1;
+				data_internal <= "0000000000000" & run3 & run2 & run1;
 			when timer_flags =>
-				data_timer <= "0000000000000" & done3 & done2 & done1;
+				data_internal <= "0000000000000" & done3 & done2 & done1;
 			when others =>
-				data_timer <= x"0000";
+				data_internal <= x"0000";
 		 end case;
 		 io_en <= '1';
 	  else
