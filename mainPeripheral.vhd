@@ -15,7 +15,6 @@ use lpm.lpm_components.all;
 entity mainPeripheral is
 	generic (
 		clock_freq : integer := 10000000 --sets input clock frequency to 10MHz (default), also scomp clock frequency
-		
 		-- define the clock here
 	);
 	
@@ -93,7 +92,7 @@ architecture behavior of mainPeripheral is
 	-- 1000 * 10000 = 10 million clock ticks, so the channels update once per second (default)
 	-- example: 1 ms tick rate -> tick period is 1, so channels will update every 10000 clock ticks
 	-- the programmer can change this value using register 0x70
-	signal tick_period : integer range 1 to 65535 := 1000;
+	signal tick_period : unsigned(15 downto 0) := "0000001111101000"; -- sets default tick period as 1000
 
   signal data_internal  : std_logic_vector(15 downto 0); -- internal data lines for output, use with lpm
   signal io_en       : std_logic;
@@ -116,7 +115,7 @@ begin
 	
     -- go back to defualt tick period, reset clock count to zero
     clock_count <= 0;
-    tick_period <= 1000;
+    tick_period <= to_unsigned(1000,16);
 
     -- reset all channel counts to 0
     master_count <= "0000000000000000";
@@ -141,104 +140,116 @@ begin
     done3 <= '0';
 
   elsif rising_edge(clk_10mhz) then
-    -- start/stop, SCOMP does OUT to 0x74
-      if io_write = '1' and io_addr = master_cmd then
-          master_run <= io_data(0);   --figuring what is written in the lsb
-      end if;
-
-      -- counting logic 
-      if master_run = '1' then
+	-- counting logic 
+      	if master_run = '1' then
           if clock_count >= tick_period * ticks_per_ms - 1 then -- this is to keep it in line with how fpga clock ticks have gone by.
               clock_count <= 0;
               master_count <= master_count + 1;
               if run1 = '1' then  -- counter for subch 1
                 sub1_count <= sub1_count + 1; -- increment
-                if ((sub1_count >= sub1_exp - 1) and (sub1_exp > 0 xor sub1_count = 0)) then
+                if ((sub1_count >= sub1_exp - 1) and mode1 = '1') then -- if count is at/past expiry in timer mode, raise flag.
                   done1 <= '1';
+						run1 <= '0';
+						sub1_count <= sub1_exp;
                 end if; -- check if done
               end if;
               if run2 = '1' then -- counter for subch 2
                 sub2_count <= sub2_count + 1; -- increment
-                if ((sub2_count >= sub2_exp - 1) and (sub2_exp > 0 xor sub2_count = 0)) then
+                if ((sub2_count >= sub2_exp - 1) and mode2 = '1') then
                   done2 <= '1'; 
+						run2 <= '0';
+						sub2_count <= sub2_exp;
                 end if; -- check if done
               end if;
               if run3 = '1' then -- counter for subch 3
                 sub3_count <= sub3_count + 1; -- increment
-                if ((sub3_count >= sub3_exp - 1) and (sub3_exp > 0 xor sub3_count = 0)) then
+                if ((sub3_count >= sub3_exp - 1) and mode3 = '1') then 
                   done3 <= '1'; 
+						run3 <= '0';
+						sub3_count <= sub3_exp;
                 end if; -- check if done
               end if;
           else
               clock_count <= clock_count + 1; -- adding the fpga clock ticks
           end if;
-      end if;
-		
-		-- data input mechanism for subchannels
-		if (io_write = '1' and resetn = '1') then
-			 -- set expiry time
-			 if (io_addr = sub1_addr) then
-				sub1_exp <= unsigned(io_data);
-				done1 <= '0';
-			 end if;
-			 if (io_addr = sub2_addr) then
-				sub2_exp <= unsigned(io_data);
-				done2 <= '0';
-			 end if;
-			 if (io_addr = sub3_addr) then
-				sub3_exp <= unsigned(io_data);
-				done3 <= '0';
-			 end if;
-			 -- sub commands
-			 if (io_addr = sub_cmd) then
-				-- run state
-				run1 <= io_data(0);
-				run2 <= io_data(1);
-				run3 <= io_data(2);
-				-- reset
-				if (io_data(3) = '1') then
-				  sub1_count <= x"0000";
-				  done1 <= '0';
+      	end if;
+	-- data input mechanism
+		if (io_write = '1') then
+			-- master channel inputs
+				-- start/stop, SCOMP does OUT to 0x74
+				if (io_addr = master_cmd) then
+					master_run <= io_data(0);   --figuring what is written in the lsb
 				end if;
-				if (io_data(4) = '1') then
-				  sub2_count <= x"0000";
-				  done2 <= '0';
+				-- master reset: OUT to 0x74 with bit 1 rasied
+				if (io_addr = master_cmd and io_data(1) = '1') then
+					clock_count <= 0;
+					
+					-- clear elasped counts
+					master_count <= "0000000000000000";
+					sub1_count <= "0000000000000000";
+					sub2_count <= "0000000000000000";
+					sub3_count <= "0000000000000000";
+					
+					-- clear expiry flags
+					done1 <= '0';
+					done2 <= '0';
+					done3 <= '0';
+					
+					-- reset to stop watch mode
+					-- sub1_exp <= "0000000000000000";
+					-- sub2_exp <= "0000000000000000";
+					-- sub3_exp <= "0000000000000000";
+					
+					-- mode1 <= '0';
+					-- mode2 <= '0';
+					-- mode3 <= '0';
 				end if;
-				if (io_data(5) = '1') then
-				  sub3_count <= x"0000";
-				  done3 <= '0';
-				  sub3_exp <= x"0000";
+				-- adjusting tick rate
+				if (io_addr = master_addr and master_run = '0' and run1 = '0' and run2 = '0' and run3 = '0') then
+					tick_period <= unsigned(io_data);
 				end if;
-			end if;
+			-- subchannel inputs 
+				-- expiry time addresses
+				if (io_addr = sub1_addr) then
+					sub1_exp <= unsigned(io_data);
+					if (io_data = x"0000") then mode1 <= '0';
+					else mode1 <= '1'; end if;
+					done1 <= '0';
+				end if;
+				if (io_addr = sub2_addr) then
+					sub2_exp <= unsigned(io_data);
+					if (io_data = x"0000") then mode2 <= '0';
+					else mode2 <= '1'; end if;
+					done2 <= '0';
+				end if;
+				if (io_addr = sub3_addr) then
+					sub3_exp <= unsigned(io_data);
+					if (io_data = x"0000") then mode3 <= '0';
+					else mode3 <= '1'; end if;
+					done3 <= '0';
+				end if;
+				-- sub command address
+				if (io_addr = sub_cmd) then
+					-- run state
+					run1 <= io_data(0);
+					run2 <= io_data(1);
+					run3 <= io_data(2);
+					-- reset
+					if (io_data(3) = '1') then
+					sub1_count <= x"0000";
+					done1 <= '0';
+					end if;
+					if (io_data(4) = '1') then
+					sub2_count <= x"0000";
+					done2 <= '0';
+					end if;
+					if (io_data(5) = '1') then
+					sub3_count <= x"0000";
+					done3 <= '0';
+					end if;
+				end if;
 		end if;
-		
-		-- master reset: OUT to 0x74 with bit 1 rasied
-		if io_write = '1' and io_addr = master_cmd and io_data(1) = '1' then
-			clock_count <= 0;
-			
-			-- clear elasped counts
-			master_count <= "0000000000000000";
-			sub1_count <= "0000000000000000";
-			sub2_count <= "0000000000000000";
-			sub3_count <= "0000000000000000";
-			
-			-- clear expiry flags
-			done1 <= '0';
-			done2 <= '0';
-			done3 <= '0';
-			
-			-- reset to stop watch mode
-			sub1_exp <= "0000000000000000";
-			sub2_exp <= "0000000000000000";
-			sub3_exp <= "0000000000000000";
-			
-			mode1 <= '0';
-			mode2 <= '0';
-			mode3 <= '0';
-		end if;
-			
-  end if;
-    
+  end if;   
 end process;
 
 
@@ -252,20 +263,19 @@ begin
 			when master_addr =>
 				data_internal <= std_logic_vector(master_count);
 			when sub1_addr =>
-				if (sub1_exp = 0) then data_internal <= std_logic_vector(sub1_count);
-				elsif (done1 = '1') then data_internal <= x"0000";
-				else data_internal <= std_logic_vector(sub1_exp - sub1_count);
+				if (mode1 = '0') then data_internal <= std_logic_vector(sub1_count);	-- output for stopwatch mode
+				else data_internal <= std_logic_vector(sub1_exp - sub1_count);			-- output for timer mode
 				end if;
 			when sub2_addr =>
-				if (sub2_exp = 0) then data_internal <= std_logic_vector(sub2_count);
-				elsif (done2 = '1') then data_internal <= x"0000";
+				if (mode2 = '0') then data_internal <= std_logic_vector(sub2_count);
 				else data_internal <= std_logic_vector(sub2_exp - sub2_count);
 				end if;
 			when sub3_addr =>
-				if (sub3_exp = 0) then data_internal <= std_logic_vector(sub3_count);
-				elsif (done3 = '1') then data_internal <= x"0000";
+				if (mode3 = '0') then data_internal <= std_logic_vector(sub3_count);
 				else data_internal <= std_logic_vector(sub3_exp - sub3_count);
 				end if;
+			when master_cmd =>
+				data_internal <= "000000000000000" & master_run;
 			when sub_cmd =>
 				data_internal <= "0000000000000" & run3 & run2 & run1;
 			when timer_flags =>
