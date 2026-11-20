@@ -37,14 +37,14 @@ InitilizeGame:
   Out MasCmd ;Start master and Sub1 at the same time
 
 CountDown:
-  In Sub1
+  In Sub1 
   Call ConvertSeconds
-  Out Hex1
+  Out Hex1 ;Display countdown in seconds on left-most hex
 
   In Expiry
   And Sub1Done
-  Jnz CountDone
-  Jump CountDown
+  Jnz CountDone ;Once countdown is finished, jump to 'CountDone'
+  Jump CountDown ;Otherwise repeat
 
 CountDone:
   Loadi 0
