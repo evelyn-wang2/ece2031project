@@ -150,7 +150,6 @@ begin
                 if ((sub1_count >= sub1_exp - 1) and mode1 = '1') then -- if count is at/past expiry in timer mode, raise flag.
                   done1 <= '1';
 						run1 <= '0';
-						sub1_count <= sub1_exp;
                 end if; -- check if done
               end if;
               if run2 = '1' then -- counter for subch 2
@@ -158,7 +157,6 @@ begin
                 if ((sub2_count >= sub2_exp - 1) and mode2 = '1') then
                   done2 <= '1'; 
 						run2 <= '0';
-						sub2_count <= sub2_exp;
                 end if; -- check if done
               end if;
               if run3 = '1' then -- counter for subch 3
@@ -166,7 +164,6 @@ begin
                 if ((sub3_count >= sub3_exp - 1) and mode3 = '1') then 
                   done3 <= '1'; 
 						run3 <= '0';
-						sub3_count <= sub3_exp;
                 end if; -- check if done
               end if;
           else
@@ -231,9 +228,9 @@ begin
 				-- sub command address
 				if (io_addr = sub_cmd) then
 					-- run state
-					run1 <= io_data(0);
-					run2 <= io_data(1);
-					run3 <= io_data(2);
+					if (done1 = '0') then run1 <= io_data(0); end if;
+					if (done2 = '0') then run2 <= io_data(1); end if;
+					if (done3 = '0') then run3 <= io_data(2); end if;
 					-- reset
 					if (io_data(3) = '1') then
 					sub1_count <= x"0000";

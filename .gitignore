@@ -7,7 +7,6 @@ simulation/
 *.smsg
 *.done
 *.qws
-*.sof
 *.pof
 *.jdi
 *.pin
