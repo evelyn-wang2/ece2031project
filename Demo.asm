@@ -74,15 +74,15 @@ GameLoop:
   And Sub1Done
   Jnz GameOver  ;Game will end once 30 seconds has gone by
 
-----------------------------------------------------------------
+;----------------------------------------------------------------
 ;round logic goes here.
 
-1. I haven't dealt with splitting up Hex0 clock
-to use both for player 1 and player 2. 
-2. I really just wrote the code up until game play. 
-3. There is a game clock timer that is counting down from 30 that 
-will be displayed on Hex1.
-----------------------------------------------------------------
+;1. I haven't dealt with splitting up Hex0 clock
+;to use both for player 1 and player 2. 
+;2. I really just wrote the code up until game play. 
+;3. There is a game clock timer that is counting down from 30 that 
+;will be displayed on Hex1.
+;----------------------------------------------------------------
 
 
   Jump GameLoop
