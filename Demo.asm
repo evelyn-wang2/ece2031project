@@ -66,13 +66,17 @@ StartGame:
                 Jump GameLoop
                 
                 
-GameLoop: 
+GameLoop:       In Switches ; pause mechanism
+                And SW9Up
+                Shift -9 
+                Out MasCmd
                 In Sub1
                 Call ConvertSeconds
                 Out Hex1 ;Displays game clock on left most Hex digits
                 In Expiry
                 And Sub1Done
                 Jnz GameOver ;Game will end once 30 seconds has gone by
+                
                 
                 ;----------------------------------------------------------------
                 ;round logic goes here.
@@ -92,6 +96,44 @@ GameOver:
                 Out SubCmd ; stop all subchannels
                 Out MasCmd ; stop master 
                 Out LEDs ; turn off LEDs
+
+; Displays each player score for 3s then shows winner.
+ScoreDisplay:   Loadi 300   ; initialize a 3s timer on Sub1 and start.
+                Out Sub1
+                Loadi &B00000111001
+                Out SubCmd
+                Loadi &B00000000011
+                Out MasCmd
+                Loadi 1     ; display p1 score
+                Out Hex1
+                Load Score1
+                Out Hex0
+                Call Wait1
+                Loadi &B00000111100 ; reset 3s timer for p2 score
+                Out SubCmd
+                Loadi 2     ; display p2 score
+                Out Hex1
+                Load Score2
+                Out Hex0
+                Call Wait1
+                Loadi 0 ; Shows winner on Hex1, 0 on Hex0
+                Out Hex0
+                Load Score1 
+                Sub Score2
+                JPos Win1
+                JZero Win0
+                Loadi 2             ; p2 win - accumulator = 2
+EndScoreDisp:   Out Hex1            ; display accumulator on hex1
+                Jump WaitForRelease
+Win1:           Loadi 1             ; p1 win - accumulator = 1
+                Jump EndScoreDisp
+Win0:           Loadi 0
+                Jump EndScoreDisp   ; tie - accumulator = 0
+
+Wait1:          In Expiry ; wait until subchannel 1 expires
+                Addi -4
+                JNZ Wait1
+                Return                
                 
 WaitForRelease: ; wait for switch 9 to go down before allowing another game
                 In Switches
@@ -151,6 +193,10 @@ ConversionDone:
                 ; Score
 Score1: DW 0
 Score2: DW 0
+BaseGain: DW 300
+
+; switch mask
+SW9Up:      DW &B0000001000000000
                 
                 ;Expiri flags
 Sub1Done: DW 1 
