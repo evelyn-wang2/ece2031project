@@ -67,7 +67,7 @@ StartGame:
                 
                 
 GameLoop:       In Switches ; pause mechanism
-                And SW9Up
+                And StartBit
                 Shift -9 
                 Out MasCmd
                 In Sub1
@@ -195,9 +195,9 @@ Score1: DW 0
 Score2: DW 0
 BaseGain: DW 300
 
-; switch mask
-SW9Up:      DW &B0000001000000000
-                
+; RNG value
+RNG:    DW 0
+
                 ;Expiri flags
 Sub1Done: DW 1 
                 
