@@ -128,7 +128,7 @@ FalseStart:
 WaitFalseRelease: 
                      In Switches
                      And Player1Mask
-                     JNX WaitFalseRelease
+                     JNZ WaitFalseRelease
                      In Switches
                      And Player2Mask
                      JNZ WaitFalseRelease
