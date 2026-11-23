@@ -18,8 +18,7 @@ Setup:
                 Out Master ;sets master tick to 10 ms
                 
                 
-WaitForStart: 
-                CALL IncrementRNG
+WaitForStart:   CALL IncrementRNG
                 In Switches
                 Sub StartBit
                 JNZ WaitForStart ;wait until only switch 9 is up for game to begin
@@ -66,10 +65,17 @@ StartGame:
                 Out MasCmd ;Start master and Sub1 at the same time
                 Jump GameLoop
                 
-                
-GameLoop:       
-                CALL IncrementRNG 
-                In Switches ; pause mechanism
+NewRound:       CALL GenerateRandomDelay
+                Out Sub2                ; Output to 2nd subtimer
+                Loadi &B00000010011     ; Reset Sub2, run Sub1 and sub2
+                Out SubCmd
+; TODO: Pre-LED behavior - false start penalty
+; TODO: On-LED behavior - Light up on Sub2 expiry, reset/start subtimers (don't forget to set Sub2 back to stopwatch!!!)
+; TODO: Post-LED behavior - stop corresp. subtimer on switch high
+; TODO: Post-Response behavior - add subtimer value to each player score
+; NOTE: probably ideal if RNG incremented during Pre-LED and Post-LED TODOs (these are likely to have loops where we can put the RNG increment) 
+
+GameLoop:       In Switches ; pause mechanism
                 And StartBit
                 Shift -9 
                 Out MasCmd
@@ -80,7 +86,7 @@ GameLoop:
                 And Sub1Done
                 Jnz GameOver ;Game will end once 30 seconds has gone by
                 
-                
+
                 ;----------------------------------------------------------------
                 ;round logic goes here.
                 
@@ -122,8 +128,8 @@ ScoreDisplay:   Loadi 300   ; initialize a 3s timer on Sub1 and start.
                 Loadi 0 ; Shows winner on Hex1, 0 on Hex0
                 Out Hex0
                 Load Score1 
-                Sub Score2
-                JPos Win1
+                Sub Score2  
+                JNeg Win1
                 JZero Win0
                 Loadi 2             ; p2 win - accumulator = 2
 EndScoreDisp:   Out Hex1            ; display accumulator on hex1
