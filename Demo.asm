@@ -19,6 +19,7 @@ Setup:
                 
                 
 WaitForStart: 
+                CALL IncrementRNG
                 In Switches
                 Sub StartBit
                 JNZ WaitForStart ;wait until only switch 9 is up for game to begin
@@ -66,7 +67,9 @@ StartGame:
                 Jump GameLoop
                 
                 
-GameLoop:       In Switches ; pause mechanism
+GameLoop:       
+                CALL IncrementRNG 
+                In Switches ; pause mechanism
                 And StartBit
                 Shift -9 
                 Out MasCmd
@@ -186,6 +189,37 @@ PartialSec:
 ConversionDone: 
                 Load Seconds
                 Return
+
+
+;MARK: Needs to be added to the waitBothDOwn and Wait for LED loops
+;Every time RNG gets called, at the beginning of most logic loops,
+IncrementRNG:
+                Load    RNG
+                Addi    1
+                Store   RNG
+                Return
+
+;MARK: Add to RoundLogic
+;Generates random delay between 1 and 3, by loading the RNG and looking at the last two bits
+; if the bits are 00, it does 1 second delay, 01 -> 2 seconds delay, and, 10 means 3 seconds delay
+GenerateRandomDelay:
+                Load    RNG
+                And     Mask3           ; keep two low bits
+                Jzero   Delay1         ; 00
+                Addi    -1
+                Jzero   Delay2         ; 01
+                Addi    -1
+                Jzero   Delay3         ; 10
+                Load    Delay2s         ; 11
+                Jump    DelayDone
+Delay1:        Load    Delay1s
+                Jump    DelayDone
+Delay2:        Load    Delay2s
+                Jump    DelayDone
+Delay3:        Load    Delay3s
+DelayDone:      Store   DelayTicks
+                Return
+
                 
                 
                 
@@ -197,6 +231,11 @@ BaseGain: DW 300
 
 ; RNG value
 RNG:    DW 0
+Mask3:          DW 3
+Delay1s:        DW 100          
+Delay2s:        DW 200
+Delay3s:        DW 300
+DelayTicks:     DW 0
 
                 ;Expiri flags
 Sub1Done: DW 1 
