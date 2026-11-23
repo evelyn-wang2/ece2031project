@@ -63,7 +63,7 @@ StartGame:
                 Loadi 1
                 Out SubCmd ;enables Sub1 to run, but waits for master
                 Out MasCmd ;Start master and Sub1 at the same time
-                Jump GameLoop
+                Jump NewRound
                 
 NewRound:       CALL GenerateRandomDelay
                 Out Sub2                ; Output to 2nd subtimer
@@ -137,9 +137,9 @@ GameOver:
 ; Displays each player score for 3s then shows winner.
 ScoreDisplay:   Loadi 300   ; initialize a 3s timer on Sub1 and start.
                 Out Sub1
-                Loadi &B00000111001
+                Loadi &B00000111001 ; reset all subch, run sub1
                 Out SubCmd
-                Loadi &B00000000011
+                Loadi &B00000000011 ; run/reset master
                 Out MasCmd
                 Loadi 1     ; display p1 score
                 Out Hex1
@@ -152,8 +152,10 @@ ScoreDisplay:   Loadi 300   ; initialize a 3s timer on Sub1 and start.
                 Out Hex1
                 Load Score2
                 Out Hex0
+                Loadi &B00000111001 ; reset all subch, run sub1
+                Out SubCmd
                 Call Wait1
-                Loadi 0 ; Shows winner on Hex1, 0 on Hex0
+                Loadi 0             ; Shows winner on Hex1, 0 on Hex0
                 Out Hex0
                 Load Score1 
                 Sub Score2  
@@ -254,7 +256,6 @@ Delay3:        Load    Delay3s
 DelayDone:      Store   DelayTicks
                 Return
 
-                
                 
                 
                 ;; Variables
