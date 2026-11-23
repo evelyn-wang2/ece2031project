@@ -85,7 +85,35 @@ GameLoop:       In Switches ; pause mechanism
                 In Expiry
                 And Sub1Done
                 Jnz GameOver ;Game will end once 30 seconds has gone by
+
+NewRound:       CALL GenerateRandomDelay
+                Out Sub2                ; Output to 2nd subtimer
+                Loadi &B00000010011     ; Reset Sub2, run Sub1 and sub2
+                Out SubCmd
+
+WaitForLed:     
+                In Sub1
+                Call ConvertSeconds
+                Out Hex1 ;Displays game clock on left most Hex digits
+
+                In Switches 
+                And &B0001000000 ;False start check;Check Player 1 (Player 1 uses sw 6)
+                Load Score1
+              ` Addi 300 ;Add false start penalty
+                Store Score1
+                In Switches 
+                And &B0000000001 ;False start check;Check Player 2 (Player 2 uses sw 0)
+                Load Score2
+              ` Addi 300 ;Add false start penalty
+                Store Score
                 
+                In Expiry
+                And &B00000000010 ;check if random delay timer for led is up
+                Jzero WaitForLed
+
+                ;Led goes up and substopwatches for player 1 and player 2 begin
+                Loadi &B00000110011
+                Out SubCmd 
 
                 ;----------------------------------------------------------------
                 ;round logic goes here.
@@ -140,7 +168,7 @@ Win0:           Loadi 0
                 Jump EndScoreDisp   ; tie - accumulator = 0
 
 Wait1:          In Expiry ; wait until subchannel 1 expires
-                Addi -4
+                Addi -1
                 JNZ Wait1
                 Return                
                 
