@@ -65,7 +65,10 @@ StartGame:
                 Out MasCmd ;Start master and Sub1 at the same time
                 Jump GameLoop
                 
-                
+NewRound:       CALL GenerateRandomDelay
+                Out Sub2                ; Output to 2nd subtimer
+                Loadi &B00000010011     ; Reset Sub2, run Sub1 and sub2
+                Out SubCmd
 ; TODO: Pre-LED behavior - false start penalty
 ; TODO: On-LED behavior - Light up on Sub2 expiry, reset/start subtimers (don't forget to set Sub2 back to stopwatch!!!)
 ; TODO: Post-LED behavior - stop corresp. subtimer on switch high
