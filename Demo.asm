@@ -38,7 +38,7 @@ InitilizeGame:
                 
 CountDown: 
                 In Sub1 
-                Call ConvertSeconds
+                Shift -6
                 Out Hex1 ;Display countdown in seconds on left-most hex
                 
                 In Expiry
@@ -80,7 +80,7 @@ GameLoop:       In Switches ; pause mechanism
                 Shift -9 
                 Out MasCmd
                 In Sub1
-                Call ConvertSeconds
+                Shift -6
                 Out Hex1 ;Displays game clock on left most Hex digits
                 In Expiry
                 And Sub1Done
@@ -162,41 +162,7 @@ WaitForRelease: ; wait for switch 9 to go down before allowing another game
                 
                 
                 
-                ;SubRoutines
-                
-                ;Used for countdowns -> inputed a value from AC in 10 ms ticks ; outputs value to AC in seconds 
-ConvertSeconds: 
-                Store TicksRemaining ;store timer value
-                Loadi 0
-                Store Seconds ;Start Second count at 0
-                
-                ;Subtract 100 ticks (1 second) while adding 1 second to 'Seconds' 
-                ;until less than 100 ticks remain, than round up using PartialSec
-                ;routine
-ConvertLoop: 
-                Load TicksRemaining ;Load ticks to convert
-                Jzero ConversionDone
-                
-                Addi -100 ;Subtract 100 ticks (1 sec)
-                JNeg PartialSec ;if negative, less than 1 second remains 
-                
-                Store TicksRemaining
-                Load Seconds 
-                Addi 1 ;Increment 'Seconds' count
-                Store Seconds
-                Jump ConvertLoop ;repeat process until less than 100 ticks remain
-                
-                ;if less than 100 ticks remain round up
-PartialSec: 
-                Load Seconds
-                Addi 1
-                Return
-                
-ConversionDone: 
-                Load Seconds
-                Return
-
-
+;SubRoutines
 ;MARK: Needs to be added to the waitBothDOwn and Wait for LED loops
 ;Every time RNG gets called, at the beginning of most logic loops,
 IncrementRNG:
@@ -226,11 +192,11 @@ Delay3:        Load    Delay3s
 DelayDone:      Store   DelayTicks
                 Return
 
-                
-                
-                
-                ;; Variables
-                ; Score
+
+
+
+;; Variables
+; Score
 Score1: DW 0
 Score2: DW 0
 BaseGain: DW 300
@@ -243,27 +209,23 @@ Delay2s:        DW 200
 Delay3s:        DW 300
 DelayTicks:     DW 0
 
-                ;Expiri flags
+;Expiry flags
 Sub1Done: DW 1 
-                
-                ;ConvertSeconds sub routine
-TicksRemaining: DW 0
-Seconds: DW 0 
-                
-                ;; Variables for Game start
+        
+; Game start
 StartBit: DW &B1000000000
 GameDuration: DW 3000
-                
-                
-                
-                ;; Addresses
-                ; Existing Peripherals
+                           
+        
+
+;; Addresses
+; Existing Peripherals
 Switches: EQU 000 ; 0x00
 LEDs: EQU 001 ; 0x01
 OldTimer: EQU 002 ; 0x02
 Hex0: EQU 004 ; 0x04 ;Player 1 clock in upper two digits (Stopwatch) + Player 2 clock in lower 2 digits (Stopwatch)
 Hex1: EQU 005 ; 0x05 ;Game clock (countdown) (leftmost Hex
-                ; Timer Peripheral 
+; Timer Peripheral 
 Master: EQU 112 ; 0x70 - Master Time/Tick-rate
 Sub1: EQU 113 ; 0x71 - Subch1 Time/Expiry-set
 Sub2: EQU 114 ; 0x72 - Subch2 Time/Expiry-set
