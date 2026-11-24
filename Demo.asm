@@ -115,18 +115,40 @@ LedUp:
                      Loadi &B00000110111
                      Out SubCmd
 
-Wait:                Call IncrementRNG
+Round:               Call IncrementRNG
                      Call CheckClock ;Check to make sure game clock hasn't expired
                      JNZ GameOver   
 
-                     Load T1
-            
-
-
-
+                     ;Player 1
+                     Load Done1
+                     Jnz P1Done
+                     In Sub2
+                     Call Stop255 ;check to see if they exceeded max value
+                     Store T1
+                     In Switches
+                     And Player1Mask
+                     Jzero P1Frozen
+                     Loadi 1 ;if player 1 raises switch, set Done1 to 1
+                     Store Done1      
                      
-
-
+P1Done:
+                     ;Player 2
+                     Load Done2
+                     Jnz CheckRound
+                     In Sub3
+                     Call Stop255
+                     Store T2
+                     In Switches
+                     And Player2Mask 
+                     Jzero CheckRound
+                     Loadi 1 ;if player 2 raises switch, set Done2 to 1
+                     Store Done2
+CheckRound:
+                     Call ShowPlayersTime ;updates times on hex
+                     Load Done1
+                     And Done2
+                     Jzero Round ;check if both have raised sw, otherwise loop
+                     Jump RoundFinished ;if both raised, round over
 
 RoundFinished:
                     Loadi 0
@@ -228,6 +250,28 @@ WaitForRelease: ; wait for switch 9 to go down before allowing another game
                      
                      
 ;SubRoutines
+
+
+ShowPlayersTime:
+                      Load T1
+                      Shift 8     ; player 1 in upper two digits
+                      Add T2      ; player 2 in lower two digits
+                      Out Hex0
+                      Return
+
+;make sure player clocks to leak into eachother
+;Highest hex digit on 2 nibbles is 255 (0xff)
+Stop255:
+                      Store StopTmp
+                      Addi -255              
+                      JPos Above255
+                      Load StopTmp
+                      Return
+
+Above255:             Loadi 255               
+                      Return
+
+                     
 
 PenaltyCheckP1: 
                      In Switches
@@ -353,6 +397,7 @@ T1:     DW 0
 T2:     DW 0
 Done1:  DW 0
 Done2:  DW 0
+StopTmp: DW 0
                      
                      ; RNG value
 RNG: DW 0
