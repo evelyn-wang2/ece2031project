@@ -66,7 +66,8 @@ StartGame:
                      Jump NewRound
 
 ; new round/wait
-NewRound:            
+NewRound:            Loadi 0
+                     Out LEDs ;Turn off Led
                      Loadi &B00000010001     ; reset Sub2 
                      Out SubCmd
                      CALL GenerateRandomDelay
@@ -88,7 +89,7 @@ WaitForLed:          Call IncrementRNG
 ; round start
 LedUp:
                      ;Led goes up 
-                     Loadi &B0000100000  ;led5  used for gameplay
+                     Loadi &B0000001000  ;led3  used for gameplay
                      Out LEDs
                      ;reset round values to zero
                      Loadi 0
@@ -139,8 +140,6 @@ CheckRound:          Call ShowPlayersTime ; shows/updates times on hex
 
 ; round finish
 RoundFinished:
-                    Loadi 0
-                    Out LEDs ;Turn off Led
                     ; add this round's scores 
                     Load Score1
                     Add Time1
@@ -160,18 +159,9 @@ WaitForNRound:      Call IncrementRNG
 
 
 FalseStart: 
-                     Loadi 1
-                     Out SubCmd ;keep game clock running, stop p1 and p2 clock
                      Loadi 0
-                     Out LEDs
+                     Out MasCmd ;keep game clock running, stop p1 and p2 clock
                      Jump PenaltyCheckP1    ; checks which player had false start
-
-WaitFalseRelease:    Call IncrementRNG
-                     In Switches    ; wait for both switches to go back down, then start new round
-                     And BothMask
-                     JNZ WaitFalseRelease
-                     Jump NewRound
-
 
 GameOver:            Loadi 0
                      Out SubCmd ; stop all subchannels
@@ -256,14 +246,18 @@ PenaltyCheckP1:
                      Load Score1
                      Addi 300 ;if player 1 false started, add 300 to score
                      Store Score1
+                     Load Player1Mask
+                     Out LEDs
                      ;Jump PenaltyCheckP2 ; maybe not needed since they are back-to-back
 PenaltyCheckP2:      In Switches
                      And Player2Mask
-                     Jzero WaitFalseRelease
+                     Jzero WaitForNRound
                      Load Score2
                      Addi 300 ;if player 2 false started, add 300 to score
                      Store Score2
-                     Jump WaitFalseRelease
+                     Load Player2Mask
+                     Out LEDs
+                     Jump WaitForNRound
 
 ;check game clock 
 ClockCheck:          
