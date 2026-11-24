@@ -14,13 +14,13 @@ CONTENT
     003 : 9801; -- Out LEDs ;turn off LEDs
     004 : 9874; -- Out MasCmd ;Stop master channel
     005 : 9875; -- Out SubCmd ;Stop all subchannels
-    006 : 1105; -- Store Score1
-    007 : 1106; -- Store Score2
+    006 : 10f5; -- Store Score1
+    007 : 10f6; -- Store Score2
     008 : 180a; -- Loadi 10
     009 : 9870; -- Out Master ;sets master tick to 10 ms
-    00a : 80f1; -- WaitForStart:        CALL IncrementRNG
+    00a : 80ec; -- WaitForStart:        CALL IncrementRNG
     00b : 9000; -- In Switches
-    00c : 291a; -- Sub StartBit
+    00c : 2906; -- Sub StartBit
     00d : 780a; -- JNZ WaitForStart ;wait until only switch 9 is up for game to begin
     00e : 1802; -- Loadi 2 ;
     00f : 9874; -- Out MasCmd ; resets master + sub-channel counts
@@ -32,10 +32,10 @@ CONTENT
     015 : 9875; -- Out SubCmd ;enables Sub1 to run, but waits for master
     016 : 9874; -- Out MasCmd ;Start master and Sub1 at the same time
     017 : 9071; -- In Sub1
-    018 : 80e0; -- Call ConvertSeconds
+    018 : 80db; -- Call ConvertSeconds
     019 : 9805; -- Out Hex1 ;Display countdown in seconds on left-most hex
     01a : 9076; -- In Expiry
-    01b : 3913; -- And Sub1Done
+    01b : 38ff; -- And Sub1Done
     01c : 781e; -- Jnz CountDone ;Once countdown is finished, jump to 'CountDone'
     01d : 5817; -- Jump CountDown ;Otherwise repeat
     01e : 1800; -- Loadi 0
@@ -44,7 +44,7 @@ CONTENT
     021 : 1802; -- Loadi 2
     022 : 9874; -- Out MasCmd ;resets master + sub-channel counts
     023 : 5824; -- Jump StartGame
-    024 : 091b; -- Load GameDuration ;Set Sub1 countdown to 30 seconds (10 ms tick * 3000 = 30 seconds)
+    024 : 0907; -- Load GameDuration ;Set Sub1 countdown to 30 seconds (10 ms tick * 3000 = 30 seconds)
     025 : 9871; -- Out Sub1
     026 : 1801; -- Loadi 1
     027 : 9875; -- Out SubCmd ;enables Sub1 to run, but waits for master
@@ -54,245 +54,225 @@ CONTENT
     02b : 9801; -- Out LEDs ;Turn off Led
     02c : 1811; -- Loadi &B00000010001     ; reset Sub2
     02d : 9875; -- Out SubCmd
-    02e : 80f5; -- CALL GenerateRandomDelay
+    02e : 80f0; -- CALL GenerateRandomDelay
     02f : 9872; -- Out Sub2 ; Output to 2nd subtimer
     030 : 1803; -- Loadi &B00000000011 ; run Sub1 and sub2
     031 : 9875; -- Out SubCmd
-    032 : 80f1; -- WaitForLed:          Call IncrementRNG
-    033 : 80cb; -- Call ClockCheck ;if game is over, ac won't equal zero
-    034 : 787b; -- Jnz GameOver
+    032 : 80ec; -- WaitForLed:          Call IncrementRNG
+    033 : 80c6; -- Call ClockCheck ;if game is over, ac won't equal zero
+    034 : 7875; -- Jnz GameOver
     035 : 9000; -- In Switches        ; read player switches; if either is high, jump to falsestart
-    036 : 3917; -- And BothMask
+    036 : 3903; -- And BothMask
     037 : 7872; -- JNZ FalseStart
     038 : 9076; -- In Expiry
-    039 : 3914; -- And Sub2Done
+    039 : 3900; -- And Sub2Done
     03a : 7032; -- Jzero WaitForLed
     03b : 1808; -- Loadi &B0000001000  ;led3  used for gameplay
     03c : 9801; -- Out LEDs
     03d : 1800; -- Loadi 0
-    03e : 110a; -- Store Done1 ;reset to zero for each round
-    03f : 110b; -- Store Done2
-    040 : 1108; -- Store Time1 ;reset to zero for each round
-    041 : 1109; -- Store Time2
+    03e : 10fa; -- Store Done1 ;reset to zero for each round
+    03f : 10fb; -- Store Done2
+    040 : 10f8; -- Store Time1 ;reset to zero for each round
+    041 : 10f9; -- Store Time2
     042 : 1800; -- Loadi 0    ; revert Sub2 to stopwatch
     043 : 9872; -- Out Sub2
     044 : 1831; -- Loadi &B00000110001
     045 : 9875; -- Out SubCmd
     046 : 1807; -- Loadi &B00000000111 ;run sub1,sub2,sub3
     047 : 9875; -- Out SubCmd
-    048 : 80f1; -- Round:               Call IncrementRNG
-    049 : 80cb; -- Call ClockCheck ;Check to make sure game clock hasn't expired
-    04a : 787b; -- JNZ GameOver
-    04b : 090a; -- Load Done1     ; check if p1 is done, jump to p2 check (P1Done) if so
+    048 : 80ec; -- Round:               Call IncrementRNG
+    049 : 80c6; -- Call ClockCheck ;Check to make sure game clock hasn't expired
+    04a : 7875; -- JNZ GameOver
+    04b : 08fa; -- Load Done1     ; check if p1 is done, jump to p2 check (P1Done) if so
     04c : 7855; -- Jnz P1Done
     04d : 9072; -- In Sub2
-    04e : 80b3; -- Call Stop255   ; check to see if they exceeded max value
-    04f : 1108; -- Store Time1
+    04e : 80ae; -- Call Stop255   ; check to see if they exceeded max value
+    04f : 10f8; -- Store Time1
     050 : 9000; -- In Switches        ; check if switch is up yet
-    051 : 3915; -- And Player1Mask
+    051 : 3901; -- And Player1Mask
     052 : 7055; -- Jzero P1Done       ; if switch not up yet, check p2
     053 : 1801; -- Loadi 1 ;if player 1 raises switch, set Done1 to 1
-    054 : 110a; -- Store Done1
-    055 : 090b; -- Load Done2    ; check if p2 is done, jump to round check (CheckRound) if so
+    054 : 10fa; -- Store Done1
+    055 : 08fb; -- Load Done2    ; check if p2 is done, jump to round check (CheckRound) if so
     056 : 785f; -- Jnz CheckRound
     057 : 9073; -- In Sub3
-    058 : 80b3; -- Call Stop255   ; check to see if they exceeded max value
-    059 : 1109; -- Store Time2
+    058 : 80ae; -- Call Stop255   ; check to see if they exceeded max value
+    059 : 10f9; -- Store Time2
     05a : 9000; -- In Switches    ; check if switch is up yet
-    05b : 3916; -- And Player2Mask
+    05b : 3902; -- And Player2Mask
     05c : 705f; -- Jzero CheckRound   ; if not up yet, skip Done2
     05d : 1801; -- Loadi 1 ;if player 2 raises switch, set Done2 to 1
-    05e : 110b; -- Store Done2
-    05f : 80ae; -- CheckRound:          Call ShowPlayersTime ; shows/updates times on hex
-    060 : 090a; -- Load Done1
-    061 : 390b; -- And Done2
+    05e : 10fb; -- Store Done2
+    05f : 80a9; -- CheckRound:          Call ShowPlayersTime ; shows/updates times on hex
+    060 : 08fa; -- Load Done1
+    061 : 38fb; -- And Done2
     062 : 7048; -- Jzero Round ;check if both have raised sw, otherwise loop
-    063 : 0905; -- Load Score1
-    064 : 2108; -- Add Time1
-    065 : 1105; -- Store Score1
-    066 : 0906; -- Load Score2
-    067 : 2109; -- Add Time2
-    068 : 1106; -- Store Score2
+    063 : 08f5; -- Load Score1
+    064 : 20f8; -- Add Time1
+    065 : 10f5; -- Store Score1
+    066 : 08f6; -- Load Score2
+    067 : 20f9; -- Add Time2
+    068 : 10f6; -- Store Score2
     069 : 1800; -- Loadi 0
     06a : 9874; -- Out MasCmd   ;pause game clock
-    06b : 80f1; -- WaitForNRound:      Call IncrementRNG
+    06b : 80ec; -- WaitForNRound:      Call IncrementRNG
     06c : 9000; -- In Switches         ; wait for both switches to go down
-    06d : 3917; -- And BothMask
+    06d : 3903; -- And BothMask
     06e : 786b; -- JNZ WaitForNRound
     06f : 1801; -- Loadi 1
     070 : 9874; -- Out MasCmd   ;resume game clock
     071 : 582a; -- Jump NewRound
-    072 : 1801; -- Loadi 1
-    073 : 9875; -- Out SubCmd ;keep game clock running, stop p1 and p2 clock
-    074 : 58ba; -- Jump PenaltyCheckP1    ; checks which player had false start
-    075 : 80f1; -- WaitFalseRelease:    Call IncrementRNG
-    076 : 80cb; -- Call ClockCheck ;Check to make sure game clock hasn't expired
-    077 : 9000; -- In Switches    ; wait for both switches to go back down, then start new round
-    078 : 3917; -- And BothMask
-    079 : 7875; -- JNZ WaitFalseRelease
-    07a : 582a; -- Jump NewRound
-    07b : 1800; -- GameOver:            Loadi 0
-    07c : 9875; -- Out SubCmd ; stop all subchannels
-    07d : 9874; -- Out MasCmd ; stop master
-    07e : 9801; -- Out LEDs ; turn off LEDs
-    07f : 1802; -- ScoreDisplay:        Loadi 2 ;reset master and subchannels
+    072 : 1800; -- Loadi 0
+    073 : 9874; -- Out MasCmd ;keep game clock running, stop p1 and p2 clock
+    074 : 58b5; -- Jump PenaltyCheckP1    ; checks which player had false start
+    075 : 1800; -- GameOver:            Loadi 0
+    076 : 9875; -- Out SubCmd ; stop all subchannels
+    077 : 9874; -- Out MasCmd ; stop master
+    078 : 1bff; -- Loadi &B1111111111
+    079 : 9801; -- Out LEDs ; turn on all LEDs
+    07a : 1802; -- ScoreDisplay:        Loadi 2 ;reset master and subchannels
+    07b : 9874; -- Out MasCmd
+    07c : 192c; -- Loadi 300 ; initialize a 3s timer on Sub1 and start. (after reset)
+    07d : 9871; -- Out Sub1
+    07e : 1801; -- Loadi 1 ; run sub1
+    07f : 9875; -- Out SubCmd
     080 : 9874; -- Out MasCmd
-    081 : 192c; -- Loadi 300 ; initialize a 3s timer on Sub1 and start. (after reset)
-    082 : 9871; -- Out Sub1
-    083 : 1801; -- Loadi 1 ; run sub1
-    084 : 9875; -- Out SubCmd
-    085 : 9874; -- Out MasCmd
-    086 : 1801; -- Loadi 1 ; display p1 score
-    087 : 9805; -- Out Hex1
-    088 : 0905; -- Load Score1
-    089 : 9804; -- Out Hex0
-    08a : 80a6; -- Call Wait1
-    08b : 1808; -- Loadi 8 ; reset 3s timer for p2 score
-    08c : 9875; -- Out SubCmd
-    08d : 192c; -- Loadi 300
-    08e : 9871; -- Out Sub1
-    08f : 1801; -- Loadi 1
-    090 : 9875; -- Out SubCmd ; start Sub1
-    091 : 1802; -- Loadi 2 ; display p2 score
-    092 : 9805; -- Out Hex1
-    093 : 0906; -- Load Score2
-    094 : 9804; -- Out Hex0
-    095 : 80a6; -- Call Wait1
-    096 : 1800; -- Loadi 0 ; Shows winner on Hex1, 0 on Hex0
-    097 : 9804; -- Out Hex0
-    098 : 0905; -- Load Score1
-    099 : 2906; -- Sub Score2
-    09a : 60a2; -- JNeg Win1
-    09b : 70a4; -- JZero Win0
-    09c : 1802; -- Loadi 2 ; p2 win - accumulator = 2
-    09d : 9805; -- EndScoreDisp:        Out Hex1 ; display accumulator on hex1
-    09e : 1800; -- Loadi 0
-    09f : 9874; -- Out MasCmd
-    0a0 : 9875; -- Out SubCmd
-    0a1 : 58aa; -- Jump WaitForRelease
-    0a2 : 1801; -- Win1:               Loadi 1 ; p1 win - accumulator = 1
-    0a3 : 589d; -- Jump EndScoreDisp
-    0a4 : 1800; -- Win0:               Loadi 0
-    0a5 : 589d; -- Jump EndScoreDisp ; tie - accumulator = 0
-    0a6 : 9076; -- Wait1:               In Expiry ; wait until subchannel 1 expires
-    0a7 : 3913; -- And Sub1Done
-    0a8 : 70a6; -- JZero Wait1
-    0a9 : 8800; -- Return
-    0aa : 9000; -- In Switches
-    0ab : 391a; -- And StartBit
-    0ac : 78aa; -- JNZ WaitForRelease
-    0ad : 5800; -- Jump Setup ; clear scores, wait for another start
-    0ae : 0908; -- Load Time1
-    0af : 5008; -- Shift 8     ; player 1 in upper two digits
-    0b0 : 2109; -- Add Time2      ; player 2 in lower two digits
-    0b1 : 9804; -- Out Hex0
+    081 : 1801; -- Loadi 1 ; display p1 score
+    082 : 9805; -- Out Hex1
+    083 : 08f5; -- Load Score1
+    084 : 9804; -- Out Hex0
+    085 : 80a1; -- Call Wait1
+    086 : 1808; -- Loadi 8 ; reset 3s timer for p2 score
+    087 : 9875; -- Out SubCmd
+    088 : 192c; -- Loadi 300
+    089 : 9871; -- Out Sub1
+    08a : 1801; -- Loadi 1
+    08b : 9875; -- Out SubCmd ; start Sub1
+    08c : 1802; -- Loadi 2 ; display p2 score
+    08d : 9805; -- Out Hex1
+    08e : 08f6; -- Load Score2
+    08f : 9804; -- Out Hex0
+    090 : 80a1; -- Call Wait1
+    091 : 1800; -- Loadi 0 ; Shows winner on Hex1, 0 on Hex0
+    092 : 9804; -- Out Hex0
+    093 : 08f5; -- Load Score1
+    094 : 28f6; -- Sub Score2
+    095 : 609d; -- JNeg Win1
+    096 : 709f; -- JZero Win0
+    097 : 1802; -- Loadi 2 ; p2 win - accumulator = 2
+    098 : 9805; -- EndScoreDisp:        Out Hex1 ; display accumulator on hex1
+    099 : 1800; -- Loadi 0
+    09a : 9874; -- Out MasCmd
+    09b : 9875; -- Out SubCmd
+    09c : 58a5; -- Jump WaitForRelease
+    09d : 1801; -- Win1:               Loadi 1 ; p1 win - accumulator = 1
+    09e : 5898; -- Jump EndScoreDisp
+    09f : 1800; -- Win0:               Loadi 0
+    0a0 : 5898; -- Jump EndScoreDisp ; tie - accumulator = 0
+    0a1 : 9076; -- Wait1:               In Expiry ; wait until subchannel 1 expires
+    0a2 : 38ff; -- And Sub1Done
+    0a3 : 70a1; -- JZero Wait1
+    0a4 : 8800; -- Return
+    0a5 : 9000; -- In Switches
+    0a6 : 3906; -- And StartBit
+    0a7 : 78a5; -- JNZ WaitForRelease
+    0a8 : 5800; -- Jump Setup ; clear scores, wait for another start
+    0a9 : 08f8; -- Load Time1
+    0aa : 5008; -- Shift 8     ; player 1 in upper two digits
+    0ab : 20f9; -- Add Time2      ; player 2 in lower two digits
+    0ac : 9804; -- Out Hex0
+    0ad : 8800; -- Return
+    0ae : 10fc; -- Store StopTmp
+    0af : 3701; -- Addi -255
+    0b0 : 68b3; -- JPos Above255
+    0b1 : 08fc; -- Load StopTmp
     0b2 : 8800; -- Return
-    0b3 : 110c; -- Store StopTmp
-    0b4 : 3701; -- Addi -255
-    0b5 : 68b8; -- JPos Above255
-    0b6 : 090c; -- Load StopTmp
-    0b7 : 8800; -- Return
-    0b8 : 18ff; -- Above255:             Loadi 255
-    0b9 : 8800; -- Return
-    0ba : 9000; -- In Switches
-    0bb : 3915; -- And Player1Mask
-    0bc : 70c2; -- Jzero PenaltyCheckP2 ; checks p2 if p1 is not the false start
-    0bd : 0905; -- Load Score1
-    0be : 312c; -- Addi 300 ;if player 1 false started, add 300 to score
-    0bf : 1105; -- Store Score1
-    0c0 : 0915; -- Load Player1Mask
-    0c1 : 9801; -- Out LEDs
-    0c2 : 9000; -- PenaltyCheckP2:      In Switches
-    0c3 : 3916; -- And Player2Mask
-    0c4 : 7075; -- Jzero WaitFalseRelease
-    0c5 : 0906; -- Load Score2
-    0c6 : 312c; -- Addi 300 ;if player 2 false started, add 300 to score
-    0c7 : 1106; -- Store Score2
-    0c8 : 0916; -- Load Player2Mask
-    0c9 : 9801; -- Out LEDs
-    0ca : 5875; -- Jump WaitFalseRelease
-    0cb : 80d2; -- Call PauseCheck
-    0cc : 9071; -- In Sub1
-    0cd : 80e0; -- Call ConvertSeconds
-    0ce : 9805; -- Out Hex1 ;Displays game clock on left most Hex digits
-    0cf : 9076; -- In Expiry
-    0d0 : 3913; -- And Sub1Done
-    0d1 : 8800; -- Return
-    0d2 : 9000; -- In Switches
-    0d3 : 391a; -- And StartBit
-    0d4 : 78dd; -- Jnz Running ;if sw9 is up, that means its running
-    0d5 : 58d6; -- Jump Pause
-    0d6 : 1800; -- Loadi 0
-    0d7 : 9874; -- Out MasCmd ;pause master, which pauses all channels
-    0d8 : 80f1; -- Call IncrementRNG
-    0d9 : 9000; -- In Switches
-    0da : 391a; -- And StartBit
-    0db : 70d6; -- Jzero Pause ;if equal to zero -> SW9 is down, so repeat loop
-    0dc : 58dd; -- Jump Running ; if sw9 is up, resume game
-    0dd : 1801; -- Loadi 1
-    0de : 9874; -- Out MasCmd
-    0df : 8800; -- Return
-    0e0 : 1118; -- Store TicksRemaining ;store timer value
-    0e1 : 1800; -- Loadi 0
-    0e2 : 1119; -- Store Seconds ;Start Second count at 0
-    0e3 : 0918; -- Load TicksRemaining ;Load ticks to convert
-    0e4 : 70ef; -- Jzero ConversionDone
-    0e5 : 379c; -- Addi -100 ;Subtract 100 ticks (1 sec)
-    0e6 : 60ec; -- JNeg PartialSec ;if negative, less than 1 second remains
-    0e7 : 1118; -- Store TicksRemaining
-    0e8 : 0919; -- Load Seconds
-    0e9 : 3001; -- Addi 1 ;Increment 'Seconds' count
-    0ea : 1119; -- Store Seconds
-    0eb : 58e3; -- Jump ConvertLoop ;repeat process until less than 100 ticks remain
-    0ec : 0919; -- Load Seconds
+    0b3 : 18ff; -- Above255:             Loadi 255
+    0b4 : 8800; -- Return
+    0b5 : 9000; -- In Switches
+    0b6 : 3901; -- And Player1Mask
+    0b7 : 70bd; -- Jzero PenaltyCheckP2 ; checks p2 if p1 is not the false start
+    0b8 : 08f5; -- Load Score1
+    0b9 : 312c; -- Addi 300 ;if player 1 false started, add 300 to score
+    0ba : 10f5; -- Store Score1
+    0bb : 0901; -- Load Player1Mask
+    0bc : 9801; -- Out LEDs
+    0bd : 9000; -- PenaltyCheckP2:      In Switches
+    0be : 3902; -- And Player2Mask
+    0bf : 706b; -- Jzero WaitForNRound
+    0c0 : 08f6; -- Load Score2
+    0c1 : 312c; -- Addi 300 ;if player 2 false started, add 300 to score
+    0c2 : 10f6; -- Store Score2
+    0c3 : 0902; -- Load Player2Mask
+    0c4 : 9801; -- Out LEDs
+    0c5 : 586b; -- Jump WaitForNRound
+    0c6 : 80cd; -- Call PauseCheck
+    0c7 : 9071; -- In Sub1
+    0c8 : 80db; -- Call ConvertSeconds
+    0c9 : 9805; -- Out Hex1 ;Displays game clock on left most Hex digits
+    0ca : 9076; -- In Expiry
+    0cb : 38ff; -- And Sub1Done
+    0cc : 8800; -- Return
+    0cd : 9000; -- In Switches
+    0ce : 3906; -- And StartBit
+    0cf : 78d8; -- Jnz Running ;if sw9 is up, that means its running
+    0d0 : 58d1; -- Jump Pause
+    0d1 : 1800; -- Loadi 0
+    0d2 : 9874; -- Out MasCmd ;pause master, which pauses all channels
+    0d3 : 80ec; -- Call IncrementRNG
+    0d4 : 9000; -- In Switches
+    0d5 : 3906; -- And StartBit
+    0d6 : 70d1; -- Jzero Pause ;if equal to zero -> SW9 is down, so repeat loop
+    0d7 : 58d8; -- Jump Running ; if sw9 is up, resume game
+    0d8 : 1801; -- Loadi 1
+    0d9 : 9874; -- Out MasCmd
+    0da : 8800; -- Return
+    0db : 1104; -- Store TicksRemaining ;store timer value
+    0dc : 1800; -- Loadi 0
+    0dd : 1105; -- Store Seconds ;Start Second count at 0
+    0de : 0904; -- Load TicksRemaining ;Load ticks to convert
+    0df : 70ea; -- Jzero ConversionDone
+    0e0 : 379c; -- Addi -100 ;Subtract 100 ticks (1 sec)
+    0e1 : 60e7; -- JNeg PartialSec ;if negative, less than 1 second remains
+    0e2 : 1104; -- Store TicksRemaining
+    0e3 : 0905; -- Load Seconds
+    0e4 : 3001; -- Addi 1 ;Increment 'Seconds' count
+    0e5 : 1105; -- Store Seconds
+    0e6 : 58de; -- Jump ConvertLoop ;repeat process until less than 100 ticks remain
+    0e7 : 0905; -- Load Seconds
+    0e8 : 3001; -- Addi 1
+    0e9 : 8800; -- Return
+    0ea : 0905; -- Load Seconds
+    0eb : 8800; -- Return
+    0ec : 08fd; -- Load RNG
     0ed : 3001; -- Addi 1
-    0ee : 8800; -- Return
-    0ef : 0919; -- Load Seconds
-    0f0 : 8800; -- Return
-    0f1 : 090d; -- Load RNG
-    0f2 : 3001; -- Addi 1
-    0f3 : 110d; -- Store RNG
+    0ee : 10fd; -- Store RNG
+    0ef : 8800; -- Return
+    0f0 : 08fd; -- Load RNG
+    0f1 : 38ff; -- And &B00011111111 ; keep 8 low bits (value 0-255)
+    0f2 : 3064; -- Addi 100          ; add 100 -> random time between 1.00s and 3.55s
+    0f3 : 10fe; -- Store DelayTicks
     0f4 : 8800; -- Return
-    0f5 : 090d; -- Load RNG
-    0f6 : 390e; -- And Mask3 ; keep two low bits
-    0f7 : 70fe; -- Jzero Delay1 ; 00
-    0f8 : 37ff; -- Addi -1
-    0f9 : 7100; -- Jzero Delay2 ; 01
-    0fa : 37ff; -- Addi -1
-    0fb : 7102; -- Jzero Delay3 ; 10
-    0fc : 0910; -- Load Delay2s ; 11
-    0fd : 5903; -- Jump DelayDone
-    0fe : 090f; -- Delay1: Load Delay1s
-    0ff : 5903; -- Jump DelayDone
-    100 : 0910; -- Delay2: Load Delay2s
-    101 : 5903; -- Jump DelayDone
-    102 : 0911; -- Delay3: Load Delay3s
-    103 : 1112; -- DelayDone: Store DelayTicks
-    104 : 8800; -- Return
-    105 : 0000; -- Score1: DW 0
-    106 : 0000; -- Score2: DW 0
-    107 : 012c; -- BaseGain: DW 300
-    108 : 0000; -- Time1:     DW 0
-    109 : 0000; -- Time2:     DW 0
-    10a : 0000; -- Done1:  DW 0
-    10b : 0000; -- Done2:  DW 0
-    10c : 0000; -- StopTmp: DW 0
-    10d : 0000; -- RNG: DW 0
-    10e : 0003; -- Mask3: DW 3
-    10f : 0064; -- Delay1s: DW 100
-    110 : 00c8; -- Delay2s: DW 200
-    111 : 012c; -- Delay3s: DW 300
-    112 : 0000; -- DelayTicks: DW 0
-    113 : 0001; -- Sub1Done: DW 1 ; Sub1 expiry flah
-    114 : 0002; -- Sub2Done: DW 2 ; Sub2 expiry flah
-    115 : 0040; -- Player1Mask: DW 64 ; SW6
-    116 : 0001; -- Player2Mask: DW 1 ; SW0
-    117 : 0041; -- BothMask:    DW 65 ; SW6 + SW0
-    118 : 0000; -- TicksRemaining: DW 0
-    119 : 0000; -- Seconds: DW 0
-    11a : 0200; -- StartBit: DW &B1000000000
-    11b : 0bb8; -- GameDuration: DW 3000
+    0f5 : 0000; -- Score1: DW 0
+    0f6 : 0000; -- Score2: DW 0
+    0f7 : 012c; -- BaseGain: DW 300
+    0f8 : 0000; -- Time1:     DW 0
+    0f9 : 0000; -- Time2:     DW 0
+    0fa : 0000; -- Done1:  DW 0
+    0fb : 0000; -- Done2:  DW 0
+    0fc : 0000; -- StopTmp: DW 0
+    0fd : 0000; -- RNG: DW 0
+    0fe : 0000; -- DelayTicks: DW 0
+    0ff : 0001; -- Sub1Done: DW 1 ; Sub1 expiry flah
+    100 : 0002; -- Sub2Done: DW 2 ; Sub2 expiry flah
+    101 : 0040; -- Player1Mask: DW 64 ; SW6
+    102 : 0001; -- Player2Mask: DW 1 ; SW0
+    103 : 0041; -- BothMask:    DW 65 ; SW6 + SW0
+    104 : 0000; -- TicksRemaining: DW 0
+    105 : 0000; -- Seconds: DW 0
+    106 : 0200; -- StartBit: DW &B1000000000
+    107 : 0bb8; -- GameDuration: DW 3000
 
-    [11c..7ff] : 0000; -- Empty memory
+    [108..7ff] : 0000; -- Empty memory
 
   END;
