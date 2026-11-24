@@ -101,7 +101,7 @@ WaitForLed:          Call IncrementRNG
 
 LedUp:
                      ;Led goes up 
-                     Loadi &B0000100000  ;led5 (i think) used for gameplay
+                     Loadi &B0000100000  ;led5  used for gameplay
                      Out LEDs
 
                      ;reset round values to zero
@@ -112,7 +112,9 @@ LedUp:
                      Store Time2 
 
                      ;substopwatches for player 1 and player 2 reset and begin
-                     Loadi &B00000110111
+                     Loadi &B00000110001
+                     Out SubCmd
+                     Loadi &B00000000111 ;run sub1,sub2,sub3
                      Out SubCmd
 
 Round:               Call IncrementRNG
