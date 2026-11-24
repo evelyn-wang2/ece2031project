@@ -193,13 +193,13 @@ begin
 					done3 <= '0';
 					
 					-- reset to stop watch mode
-					-- sub1_exp <= "0000000000000000";
-					-- sub2_exp <= "0000000000000000";
-					-- sub3_exp <= "0000000000000000";
+					sub1_exp <= "0000000000000000";
+					sub2_exp <= "0000000000000000";
+					sub3_exp <= "0000000000000000";
 					
-					-- mode1 <= '0';
-					-- mode2 <= '0';
-					-- mode3 <= '0';
+					mode1 <= '0';
+					mode2 <= '0';
+					mode3 <= '0';
 				end if;
 				-- adjusting tick rate
 				if (io_addr = master_addr and master_run = '0' and run1 = '0' and run2 = '0' and run3 = '0') then
@@ -234,14 +234,20 @@ begin
 					-- reset
 					if (io_data(3) = '1') then
 					sub1_count <= x"0000";
+					sub1_exp <= x"0000";
+					mode1 <= '0';
 					done1 <= '0';
 					end if;
 					if (io_data(4) = '1') then
 					sub2_count <= x"0000";
+					sub2_exp <= x"0000";
+					mode2 <= '0';
 					done2 <= '0';
 					end if;
 					if (io_data(5) = '1') then
 					sub3_count <= x"0000";
+				 	sub3_exp <= x"0000";
+					mode3 <= '0';
 					done3 <= '0';
 					end if;
 				end if;
