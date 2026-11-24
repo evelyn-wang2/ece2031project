@@ -120,7 +120,7 @@ Round:               Call IncrementRNG
                      JNZ GameOver   
 
                      ;Player 1
-                     Load DoneP1
+                     Load Done1
                      Jnz P1Done
                      In Sub2
                      Call Stop255 ;check to see if they exceeded max value
