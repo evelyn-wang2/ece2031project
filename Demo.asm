@@ -102,12 +102,12 @@ WaitForLed:          Call IncrementRNG
 LedUp:
                      ;Led goes up 
                      Loadi &B0000100000  ;led5 (i think) used for gameplay
-                     Out LEDS
+                     Out LEDs
 
                      ;reset round values to zero
                      Loadi 0
-                     Store DoneP1 ;reset to zero for each round
-                     Store DoneP2 
+                     Store Done1 ;reset to zero for each round
+                     Store Done2 
                      Store Time1 ;reset to zero for each round
                      Store Time2 
 
@@ -116,18 +116,18 @@ LedUp:
                      Out SubCmd
 
 Round:               Call IncrementRNG
-                     Call CheckClock ;Check to make sure game clock hasn't expired
+                     Call ClockCheck ;Check to make sure game clock hasn't expired
                      JNZ GameOver   
 
                      ;Player 1
-                     Load Done1
+                     Load DoneP1
                      Jnz P1Done
                      In Sub2
                      Call Stop255 ;check to see if they exceeded max value
-                     Store T1
+                     Store Time1
                      In Switches
                      And Player1Mask
-                     Jzero P1Frozen
+                     Jzero P1Done
                      Loadi 1 ;if player 1 raises switch, set Done1 to 1
                      Store Done1      
                      
@@ -137,7 +137,7 @@ P1Done:
                      Jnz CheckRound
                      In Sub3
                      Call Stop255
-                     Store T2
+                     Store Time2
                      In Switches
                      And Player2Mask 
                      Jzero CheckRound
@@ -152,13 +152,13 @@ CheckRound:
 
 RoundFinished:
                     Loadi 0
-                    Out LEDS ;Turn off Led
+                    Out LEDs ;Turn off Led
 
                     Load Score1             ; add this round's scores 
-                    Add T1
+                    Add Time1
                     Store Score1
                     Load Score2
-                    Add T2
+                    Add Time2
                     Store Score2
                     Loadi 0 
                     Out MasCmd   ;pause game clock
@@ -196,11 +196,13 @@ GameOver:
                      Out LEDs ; turn off LEDs
                      
                      ; Displays each player score for 3s then shows winner.
-ScoreDisplay: Loadi 300 ; initialize a 3s timer on Sub1 and start.
+ScoreDisplay:        
+                     Loadi 2 ;reset master and subchannels
+                     Out MasCmd
+                     Loadi 300 ; initialize a 3s timer on Sub1 and start. (after reset)
                      Out Sub1
-                     Loadi &B00000111001 ; reset all subch, run sub1
+                     Loadi 1 ; run sub1
                      Out SubCmd
-                     Loadi &B00000000011 ; run/reset master
                      Out MasCmd
                      Loadi 1 ; display p1 score
                      Out Hex1
@@ -209,6 +211,8 @@ ScoreDisplay: Loadi 300 ; initialize a 3s timer on Sub1 and start.
                      Call Wait1
                      Loadi 8 ; reset 3s timer for p2 score
                      Out SubCmd
+                     Loadi 300
+                     Out Sub1
                      Loadi 1
                      Out SubCmd ; start Sub1
                      Loadi 2 ; display p2 score
@@ -237,7 +241,7 @@ Win0: Loadi 0
                      Jump EndScoreDisp ; tie - accumulator = 0
                      
 Wait1:               In Expiry ; wait until subchannel 1 expires
-                     Add Sub1Done
+                     And Sub1Done
                      JZero Wait1
                      Return 
                      
@@ -253,9 +257,9 @@ WaitForRelease: ; wait for switch 9 to go down before allowing another game
 
 
 ShowPlayersTime:
-                      Load T1
+                      Load Time1
                       Shift 8     ; player 1 in upper two digits
-                      Add T2      ; player 2 in lower two digits
+                      Add Time2      ; player 2 in lower two digits
                       Out Hex0
                       Return
 
@@ -317,7 +321,7 @@ Pause:
                      In Switches 
                      And StartBit
                      Jzero Pause ;if equal to zero -> all switches are down, so repeat loop
-                     Jump Runnning ; if sw9 is up, resume game
+                     Jump Running ; if sw9 is up, resume game
 Running:      
                      Loadi 1
                      Out MasCmd
@@ -393,8 +397,8 @@ DelayDone: Store DelayTicks
 Score1: DW 0
 Score2: DW 0
 BaseGain: DW 300
-T1:     DW 0
-T2:     DW 0
+Time1:     DW 0
+Time2:     DW 0
 Done1:  DW 0
 Done2:  DW 0
 StopTmp: DW 0
