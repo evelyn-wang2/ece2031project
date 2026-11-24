@@ -18,7 +18,7 @@ Setup:
                      Out Master ;sets master tick to 10 ms
                      
                      
-WaitForStart: CALL IncrementRNG
+WaitForStart:        CALL IncrementRNG
                      In Switches
                      Sub StartBit
                      JNZ WaitForStart ;wait until only switch 9 is up for game to begin
@@ -57,44 +57,40 @@ CountDone:
                      
                      
 StartGame: 
-                     Load GameDuration ;Set Sub1 countdown to 30 seconds (10 ms tick * 3000 = 3 seconds)
+                     Load GameDuration ;Set Sub1 countdown to 30 seconds (10 ms tick * 3000 = 30 seconds)
                      Out Sub1
                      
                      Loadi 1
                      Out SubCmd ;enables Sub1 to run, but waits for master
                      Out MasCmd ;Start master and Sub1 at the same time
                      Jump NewRound
-                     
+
+NewRound:            
+                     Loadi &B00000010001     ; reset Sub2 
+                     Out SubCmd
+                     CALL GenerateRandomDelay
+                     Out Sub2 ; Output to 2nd subtimer
+                     Loadi &B00000000011 ; run Sub1 and sub2
+                     Out SubCmd
+
+
                      
                      
 ; TODO: Post-Response behavior - add subtimer value to each player score
 ; NOTE: probably ideal if RNG incremented during Pre-LED and Post-LED TODOs (these are likely to have loops where we can put the RNG increment) 
                      
-GameLoop: In Switches ; pause mechanism
-                     And StartBit
-                     Shift -9 
-                     Out MasCmd
-                     In Sub1
-                     Call ConvertSeconds
-                     Out Hex1 ;Displays game clock on left most Hex digits
-                     In Expiry
-                     And Sub1Done
-                     Jnz GameOver ;Game will end once 30 seconds has gone by
+
+
                      
-NewRound: CALL GenerateRandomDelay
-                     Out Sub2 ; Output to 2nd subtimer
-                     Loadi &B00000010011 ; Reset Sub2, run Sub1 and sub2
-                     Out SubCmd
-                     
-WaitForLed: 
-                     In Sub1
-                     Call ConvertSeconds
-                     Out Hex1 ;Displays game clock on left most Hex digits
-                     
-                     In Switches
+WaitForLed:          Call IncrementRNG
+                     Call ClockCheck ;if game is over, ac won't equal zero
+                     Jnz GameOver
+
+
+                     ;check for false starts
+                     In Switches 
                      And Player1Mask
                      JNZ FalseStart
-                     
                      In Switches
                      And Player2Mask
                      JNZ FalseStart
@@ -102,28 +98,65 @@ WaitForLed:
                      In Expiry
                      And Sub2Done ;check if random delay timer for led is up
                      Jzero WaitForLed
+
+LedUp:
+                     ;Led goes up 
+                     Loadi &B0000100000  ;led5 (i think) used for gameplay
+                     Out LEDS
+
+                     ;reset round values to zero
+                     Loadi 0
+                     Store DoneP1 ;reset to zero for each round
+                     Store DoneP2 
+                     Store Time1 ;reset to zero for each round
+                     Store Time2 
+
+                     ;substopwatches for player 1 and player 2 reset and begin
+                     Loadi &B00000110111
+                     Out SubCmd
+
+Wait:                Call IncrementRNG
+                     Call CheckClock ;Check to make sure game clock hasn't expired
+                     JNZ GameOver   
+
+                     Load T1
+            
+
+
+
                      
-                     ;Led goes up and substopwatches for player 1 and player 2 begin
-                     Loadi &B00000110011
-                     Out SubCmd 
-                     
-                     ;----------------------------------------------------------------
-                     ;round logic goes here.
-                     
-                     ;1. I haven't dealt with splitting up Hex0 clock
-                     ;to use both for player 1 and player 2. 
-                     ;2. I really just wrote the code up until game play. 
-                     ;3. There is a game clock timer that is counting down from 30 that 
-                     ;will be displayed on Hex1.
-                     ;----------------------------------------------------------------
-                     
-                     
-                     Jump GameLoop
+
+
+
+RoundFinished:
+                    Loadi 0
+                    Out LEDS ;Turn off Led
+
+                    Load Score1             ; add this round's scores 
+                    Add T1
+                    Store Score1
+                    Load Score2
+                    Add T2
+                    Store Score2
+                    Loadi 0 
+                    Out MasCmd   ;pause game clock
+WaitForNRound:
+                    Call IncrementRNG
+                    In Switches
+                    And BothMask
+                    JNZ WaitForNRound
+                    Loadi 1
+                    Out MasCmd   ;resume game clock
+                    Jump NewRound
+
+
 FalseStart: 
                      Loadi 1
-                     Out SubCmd
+                     Out SubCmd ;keep game clock running, stop p1 and p1 clock
                      Loadi 0
                      Out LEDs
+                     Jump PenaltyCheckP1
+  
                      
 WaitFalseRelease: 
                      In Switches
@@ -133,6 +166,7 @@ WaitFalseRelease:
                      And Player2Mask
                      JNZ WaitFalseRelease
                      Jump NewRound
+
 GameOver: 
                      Loadi 0
                      Out SubCmd ; stop all subchannels
@@ -169,17 +203,18 @@ ScoreDisplay: Loadi 300 ; initialize a 3s timer on Sub1 and start.
                      JZero Win0
                      Loadi 2 ; p2 win - accumulator = 2
                      
-EndScoreDisp: Out Hex1 ; display accumulator on hex1
+EndScoreDisp:        Out Hex1 ; display accumulator on hex1
                      Loadi 0
                      Out MasCmd
                      Out SubCmd
                      Jump WaitForRelease
-Win1: Loadi 1 ; p1 win - accumulator = 1
+
+Win1:                Loadi 1 ; p1 win - accumulator = 1
                      Jump EndScoreDisp
 Win0: Loadi 0
                      Jump EndScoreDisp ; tie - accumulator = 0
                      
-Wait1: In Expiry ; wait until subchannel 1 expires
+Wait1:               In Expiry ; wait until subchannel 1 expires
                      Add Sub1Done
                      JZero Wait1
                      Return 
@@ -189,30 +224,71 @@ WaitForRelease: ; wait for switch 9 to go down before allowing another game
                      And StartBit
                      JNZ WaitForRelease
                      Jump Setup ; clear scores, wait for another start
-                     
-                     ; Wait for Start
-                     
-                     ; Game
-                     
-                     ; Round
-                     
-                     ; False 
-                     
-                     ; Game End
+
                      
                      
-                     
-                     ;SubRoutines
-                     
-                     ;Used for countdowns -> inputed a value from AC in 10 ms ticks ; outputs value to AC in seconds 
+;SubRoutines
+
+PenaltyCheckP1: 
+                     In Switches
+                     And Player1Mask
+                     Jzero PenaltyCheckP2
+                     Load Score1
+                     Addi 300 ;if player 1 false started, add 300 to score
+                     Store Score1
+                     Jump PenaltyCheckP2
+
+
+PenaltyCheckP2:
+                     In Switches
+                     And Player2Mask
+                     Jzero WaitFalseRelease
+                     Load Score2
+                     Addi 300 ;if player 2 false started, add 300 to score
+                     Store Score2
+                     Jump WaitFalseRelease
+
+
+
+;check game clock 
+ClockCheck:          
+                     Call PauseCheck
+                     In Sub1
+                     Call ConvertSeconds
+                     Out Hex1 ;Displays game clock on left most Hex digits
+                     In Expiry
+                     And Sub1Done
+                     Return
+
+;check if game is paused
+PauseCheck:          
+                     In Switches
+                     And StartBit
+                     Jnz Running ;if sw9 is up, that means its running
+                     Jump Pause
+Pause:
+                     Loadi 0
+                     Out MasCmd ;pause master, which pauses all channels
+                     Call IncrementRNG
+                     In Switches 
+                     And StartBit
+                     Jzero Pause ;if equal to zero -> all switches are down, so repeat loop
+                     Jump Runnning ; if sw9 is up, resume game
+Running:      
+                     Loadi 1
+                     Out MasCmd
+                     Return
+
+
+;Used for countdowns -> inputed a value from AC in 10 ms ticks ; outputs value to AC in seconds 
 ConvertSeconds: 
                      Store TicksRemaining ;store timer value
                      Loadi 0
                      Store Seconds ;Start Second count at 0
                      
-                     ;Subtract 100 ticks (1 second) while adding 1 second to 'Seconds' 
-                     ;until less than 100 ticks remain, than round up using PartialSec
-                     ;routine
+;Subtract 100 ticks (1 second) while adding 1 second to 'Seconds' 
+;until less than 100 ticks remain, than round up using PartialSec
+;routine
 ConvertLoop: 
                      Load TicksRemaining ;Load ticks to convert
                      Jzero ConversionDone
@@ -273,6 +349,10 @@ DelayDone: Store DelayTicks
 Score1: DW 0
 Score2: DW 0
 BaseGain: DW 300
+T1:     DW 0
+T2:     DW 0
+Done1:  DW 0
+Done2:  DW 0
                      
                      ; RNG value
 RNG: DW 0
@@ -287,6 +367,7 @@ Sub1Done: DW 1 ; Sub1 expiry flah
 Sub2Done: DW 2 ; Sub2 expiry flah
 Player1Mask: DW 64 ; SW6
 Player2Mask: DW 1 ; SW0
+BothMask:    DW 65 ; SW6 + SW0
                      
                      ;ConvertSeconds sub routine
 TicksRemaining: DW 0
