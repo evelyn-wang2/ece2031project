@@ -95,8 +95,6 @@ LedUp:
                      Loadi 0
                      Store Done1 ;reset to zero for each round
                      Store Done2 
-                     Store Time1 ;reset to zero for each round
-                     Store Time2 
                      ;substopwatches for player 1 and player 2 reset and begin
                      Loadi 0    ; revert Sub2 to stopwatch
                      Out Sub2
@@ -113,23 +111,23 @@ Round:               Call IncrementRNG
                      ;Player 1
                      Load Done1     ; check if p1 is done, jump to p2 check (P1Done) if so
                      Jnz P1Done
-                     In Sub2
-                     Call Stop255   ; check to see if they exceeded max value
-                     Store Time1    
                      In Switches        ; check if switch is up yet
                      And Player1Mask
                      Jzero P1Done       ; if switch not up yet, check p2
+                     In SubCmd          ; read current run bits (Sub3, Sub2, Sub1)
+                     And StopSub2Mask   ; clear Sub2's run bit, leave Sub1/Sub3 as they are
+                     Out SubCmd         ; pause Sub2 -> p1 stopwatch holds its time
                      Loadi 1 ;if player 1 raises switch, set Done1 to 1
                      Store Done1            
 P1Done:              ;Player 2
                      Load Done2    ; check if p2 is done, jump to round check (CheckRound) if so
                      Jnz CheckRound
-                     In Sub3
-                     Call Stop255   ; check to see if they exceeded max value       
-                     Store Time2
                      In Switches    ; check if switch is up yet
                      And Player2Mask 
                      Jzero CheckRound   ; if not up yet, skip Done2
+                     In SubCmd          ; read current run bits (Sub3, Sub2, Sub1)
+                     And StopSub3Mask   ; clear Sub3's run bit, leave Sub1/Sub2 as they are
+                     Out SubCmd         ; pause Sub3 -> p2 stopwatch holds its time
                      Loadi 1 ;if player 2 raises switch, set Done2 to 1
                      Store Done2
 CheckRound:          Call ShowPlayersTime ; shows/updates times on hex
@@ -140,12 +138,14 @@ CheckRound:          Call ShowPlayersTime ; shows/updates times on hex
 
 ; round finish
 RoundFinished:
-                    ; add this round's scores 
-                    Load Score1
-                    Add Time1
+                    ; add this round's scores (Sub2/Sub3 are paused, so they hold each player's time)
+                    In Sub2
+                    Call Stop255
+                    Add Score1
                     Store Score1
-                    Load Score2
-                    Add Time2
+                    In Sub3
+                    Call Stop255
+                    Add Score2
                     Store Score2
                     Loadi 0 
                     Out MasCmd   ;pause game clock
@@ -221,9 +221,13 @@ WaitForRelease: ; wait for switch 9 to go down before allowing another game
                             
 ;SubRoutines
 ShowPlayersTime:
-                      Load Time1
-                      Shift 8     ; player 1 in upper two digits
-                      Add Time2      ; player 2 in lower two digits
+                      In Sub2        ; player 1 stopwatch (running, or paused once p1 responds)
+                      Call Stop255
+                      Shift 8        ; player 1 in upper two digits
+                      Store HexTmp
+                      In Sub3        ; player 2 stopwatch
+                      Call Stop255
+                      Add HexTmp     ; player 2 in lower two digits
                       Out Hex0
                       Return
 
@@ -354,11 +358,12 @@ DelayDone: Store DelayTicks
 Score1: DW 0
 Score2: DW 0
 BaseGain: DW 300
-Time1:     DW 0
-Time2:     DW 0
 Done1:  DW 0
 Done2:  DW 0
 StopTmp: DW 0
+HexTmp:  DW 0 ; used by ShowPlayersTime to combine both times
+StopSub2Mask: DW &B101 ; SubCmd run bits with Sub2 cleared (pause p1 stopwatch)
+StopSub3Mask: DW &B011 ; SubCmd run bits with Sub3 cleared (pause p2 stopwatch)
                      
 ; RNG value
 RNG: DW 0
