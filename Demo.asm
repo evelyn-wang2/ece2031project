@@ -166,7 +166,8 @@ FalseStart:
 GameOver:            Loadi 0
                      Out SubCmd ; stop all subchannels
                      Out MasCmd ; stop master 
-                     Out LEDs ; turn off LEDs
+                     Loadi &B1111111111
+                     Out LEDs ; turn on all LEDs
 ; Displays each player score for 3s then shows winner.
 ScoreDisplay:        Loadi 2 ;reset master and subchannels
                      Out MasCmd
@@ -331,25 +332,13 @@ IncrementRNG:
                      Store RNG
                      Return
                      
-; Generates random delay between 1 and 3, by loading the RNG and looking at the last two bits
-; if the bits are 00, it does 1 second delay, 01 -> 2 seconds delay, and, 10 means 3 seconds delay
+; Generates random delay
 GenerateRandomDelay: 
                      Load RNG
-                     And Mask3 ; keep two low bits
-                     Jzero Delay1 ; 00
-                     Addi -1
-                     Jzero Delay2 ; 01
-                     Addi -1
-                     Jzero Delay3 ; 10
-                     Load Delay2s ; 11
-                     Jump DelayDone
-Delay1: Load Delay1s
-                     Jump DelayDone
-Delay2: Load Delay2s
-                     Jump DelayDone
-Delay3: Load Delay3s
-DelayDone: Store DelayTicks
-            Return
+                     And &B00011111111 ; keep 8 low bits (value 0-255)
+                     Addi 100          ; add 100 -> random time between 1.00s and 3.55s
+                     Store DelayTicks
+                     Return
                      
                      
                      
@@ -367,10 +356,6 @@ StopSub3Mask: DW &B011 ; SubCmd run bits with Sub3 cleared (pause p2 stopwatch)
                      
 ; RNG value
 RNG: DW 0
-Mask3: DW 3
-Delay1s: DW 100 
-Delay2s: DW 200
-Delay3s: DW 300
 DelayTicks: DW 0
                      
 ;Expiry flags
